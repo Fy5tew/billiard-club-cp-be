@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api-gateway:
+    container_name: api_gateway
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: api-gateway
+    restart: unless-stopped
+    environment:
+      APP_NAME: api-gateway
+    ports:
+      - "${API_GATEWAY_PORT}:${BASE_PORT}"
+    depends_on:
+      - postgres
+
+  identity-service:
+    container_name: identity_service
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_NAME: identity-service
+    restart: unless-stopped
+    environment:
+      APP_NAME: identity-service
+    ports:
+      - "${IDENTITY_SERVICE_PORT}:${BASE_PORT}" 
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:

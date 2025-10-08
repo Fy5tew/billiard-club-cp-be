@@ -1,0 +1,13 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: Format
+      run: yarn format
+
+    - name: Lint
+      run: yarn lint
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx commitlint --edit {1}
