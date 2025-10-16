@@ -12,13 +12,13 @@
         "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
       }
     },
-    "identity-service": {
+    "identity": {
       "type": "application",
-      "root": "apps/identity-service",
+      "root": "apps/identity",
       "entryFile": "main",
-      "sourceRoot": "apps/identity-service/src",
+      "sourceRoot": "apps/identity/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/identity-service/tsconfig.app.json"
+        "tsConfigPath": "apps/identity/tsconfig.app.json"
       }
     },
     "shared": {

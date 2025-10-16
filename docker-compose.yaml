@@ -20,25 +20,30 @@ services:
       args:
         APP_NAME: api-gateway
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       APP_NAME: api-gateway
+      IDENTITY__HOST: identity
     ports:
-      - "${API_GATEWAY_PORT}:${BASE_PORT}"
+      - "${API_GATEWAY__PORT}:${API_GATEWAY__PORT}"
     depends_on:
       - postgres
 
-  identity-service:
-    container_name: identity_service
+  identity:
+    container_name: identity
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_NAME: identity-service
+        APP_NAME: identity
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      APP_NAME: identity-service
+      APP_NAME: identity
     ports:
-      - "${IDENTITY_SERVICE_PORT}:${BASE_PORT}" 
+      - "${IDENTITY__PORT}:${IDENTITY__PORT}" 
     depends_on:
       - postgres
 

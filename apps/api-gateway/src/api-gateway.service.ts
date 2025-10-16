@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
+import { IdentityClient } from '@app/shared';
+
 @Injectable()
 export class ApiGatewayService {
-  getHello(): string {
-    return 'Api Gateway Service is running!';
+  constructor(private readonly identityClient: IdentityClient) {}
+
+  async getHello(): Promise<string> {
+    return this.identityClient.getHello();
   }
 }
