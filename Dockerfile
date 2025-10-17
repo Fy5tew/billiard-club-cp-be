@@ -4,12 +4,13 @@ WORKDIR /app
 
 ARG APP_NAME
 
-COPY package.json yarn.lock nest-cli.json tsconfig.json tsconfig.build.json ./
-
-COPY apps ./apps
-COPY libs ./libs
+COPY package.json yarn.lock ./
 
 RUN yarn install --frozen-lockfile
+
+COPY nest-cli.json tsconfig.json tsconfig.build.json ./
+COPY apps/${APP_NAME} ./apps/${APP_NAME}
+COPY libs ./libs
 
 RUN yarn build $APP_NAME
 

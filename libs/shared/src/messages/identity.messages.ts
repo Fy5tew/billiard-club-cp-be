@@ -1,3 +1,6 @@
 export enum IdentityMessage {
-  GET_HELLO = 'get_hello',
+  REGISTER = 'register',
+  UPDATE = 'update',
+  GET_BY_ID = 'get_by_id',
+  DELETE_BY_ID = 'delete_by_id',
 }

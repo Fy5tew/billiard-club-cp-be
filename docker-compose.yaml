@@ -43,7 +43,7 @@ services:
     environment:
       APP_NAME: identity
     ports:
-      - "${IDENTITY__PORT}:${IDENTITY__PORT}" 
+      - "${IDENTITY__PORT}:${IDENTITY__PORT}"
     depends_on:
       - postgres
 

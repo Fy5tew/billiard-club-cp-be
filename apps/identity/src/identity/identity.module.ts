@@ -4,15 +4,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, registerDatabase, UserEntity } from '@app/shared';
 
 import { IdentityController } from './identity.controller';
-import { IdentityService } from './identity.service';
+import { AuthModule } from '../auth/auth.module';
+import { UsersModule } from '../users';
 
 @Module({
   imports: [
     ConfigModule,
+    UsersModule,
+    AuthModule,
     registerDatabase(),
     TypeOrmModule.forFeature([UserEntity]),
   ],
   controllers: [IdentityController],
-  providers: [IdentityService],
 })
 export class IdentityModule {}

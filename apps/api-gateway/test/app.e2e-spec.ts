@@ -4,7 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
-import { ApiGatewayModule } from './../src/api-gateway.module';
+import { ApiGatewayModule } from '../src/api-gateway';
 
 describe('ApiGatewayController (e2e)', () => {
   let app: INestApplication;

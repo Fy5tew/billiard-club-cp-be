@@ -8,11 +8,10 @@ import {
 } from '@app/shared';
 
 import { ApiGatewayController } from './api-gateway.controller';
-import { ApiGatewayService } from './api-gateway.service';
 
 @Module({
   imports: [ConfigModule, registerClient(Service.IDENTITY)],
   controllers: [ApiGatewayController],
-  providers: [ApiGatewayService, IdentityClient],
+  providers: [IdentityClient],
 })
 export class ApiGatewayModule {}

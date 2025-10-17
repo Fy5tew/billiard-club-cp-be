@@ -1,9 +1,10 @@
-import { NestFactory } from '@nestjs/core';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 import { ConfigService } from '@app/shared';
 
-import { IdentityModule } from './identity.module';
+import { IdentityModule } from './identity';
 
 async function bootstrap() {
   const appContext = await NestFactory.createApplicationContext(IdentityModule);
@@ -22,6 +23,12 @@ async function bootstrap() {
       },
     },
   );
+
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(appContext.get(Reflector)),
+  );
+
   await app.listen();
 }
 void bootstrap();
