@@ -2,9 +2,9 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
-import { ConfigService } from '@app/shared';
+import { ConfigService } from '@app/shared/config/config.service';
 
-import { IdentityModule } from './identity';
+import { IdentityModule } from './identity.module';
 
 async function bootstrap() {
   const appContext = await NestFactory.createApplicationContext(IdentityModule);

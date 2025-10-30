@@ -1,6 +1,7 @@
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { ConfigModule, ConfigService } from '../config';
+import { ConfigModule } from '../config/config.module';
+import { ConfigService } from '../config/config.service';
 
 export const registerDatabase = () => {
   return TypeOrmModule.forRootAsync({

@@ -2,9 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
-import { Service } from '../constants';
-import { CreateUserDto, UpdateUserDto, UserDto } from '../dtos';
-import { IdentityMessage } from '../messages';
+import { Service } from '../constants/service.constants';
+import { CreateUserDto, UpdateUserDto, UserDto } from '../dtos/user.dto';
+import { IdentityMessage } from '../messages/identity.messages';
 
 @Injectable()
 export class IdentityClient {

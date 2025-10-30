@@ -2,10 +2,13 @@ pre-commit:
   parallel: true
   jobs:
     - name: Format
-      run: yarn format
+      run: npm run format
 
     - name: Lint
-      run: yarn lint
+      run: npm run lint
+
+    - name: Typecheck
+      run: npm run typecheck
 
 commit-msg:
   commands:

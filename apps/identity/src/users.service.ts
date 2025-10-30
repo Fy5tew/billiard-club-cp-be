@@ -3,9 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 
-import { CreateUserDto, UpdateUserDto, UserDto, UserEntity } from '@app/shared';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserDto,
+} from '@app/shared/dtos/user.dto';
+import { UserEntity } from '@app/shared/entities/user.entity';
 
-import { HASH_ROUNDS } from './users.constants';
+import { HASH_ROUNDS } from './identity.constants';
 
 @Injectable()
 export class UsersService {

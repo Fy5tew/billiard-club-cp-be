@@ -8,14 +8,14 @@ import {
   Put,
 } from '@nestjs/common';
 
+import { IdentityClient } from '@app/shared/clients/identity.client';
 import {
   CreateUserDto,
-  IdentityClient,
   UpdateUserDto,
   UserDto,
-} from '@app/shared';
+} from '@app/shared/dtos/user.dto';
 
-import { Route } from '../constants';
+import { Route } from './api-gateway.constants';
 
 @Controller()
 export class ApiGatewayController {

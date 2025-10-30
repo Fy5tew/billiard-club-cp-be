@@ -1,9 +1,9 @@
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 
-import { ConfigService } from '@app/shared';
+import { ConfigService } from '@app/shared/config/config.service';
 
-import { ApiGatewayModule } from './api-gateway';
+import { ApiGatewayModule } from './api-gateway.module';
 
 async function bootstrap() {
   const appContext =

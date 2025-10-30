@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import dotenv from 'dotenv';
 import nconf from 'nconf';
 
+import { NESTED_VALUE_SEPARATOR } from './config.constants';
 import { Config, configSchema } from './config.validation';
 
 dotenv.config();
 
 nconf.env({
-  separator: '__',
+  separator: NESTED_VALUE_SEPARATOR,
   parseValues: true,
 });
 

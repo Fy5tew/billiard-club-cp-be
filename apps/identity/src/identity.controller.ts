@@ -3,12 +3,12 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 
 import {
   CreateUserDto,
-  IdentityMessage,
   UpdateUserDto,
   UserDto,
-} from '@app/shared';
+} from '@app/shared/dtos/user.dto';
+import { IdentityMessage } from '@app/shared/messages/identity.messages';
 
-import { UsersService } from '../users';
+import { UsersService } from './users.service';
 
 @Controller()
 export class IdentityController {
