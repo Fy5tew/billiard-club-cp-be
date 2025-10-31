@@ -1,5 +1,6 @@
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 
 import { ConfigService } from '@app/shared/config/config.service';
 import { RpcToHttpExceptionFilter } from '@app/shared/filters/rpc-to-http-exception.filter';
@@ -23,6 +24,8 @@ async function bootstrap() {
     new RpcClientErrorInterceptor(),
   );
   app.useGlobalFilters(new RpcToHttpExceptionFilter());
+
+  app.use(cookieParser());
 
   await app.listen(PORT, HOST);
 }

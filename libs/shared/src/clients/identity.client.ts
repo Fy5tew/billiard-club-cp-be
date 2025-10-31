@@ -2,9 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
-import { Service } from '../constants/service.constants';
+import { LoginDto, TokensDto } from '../dtos/auth.dto';
 import { CreateUserDto, UpdateUserDto, UserDto } from '../dtos/user.dto';
 import { IdentityMessage } from '../messages/identity.messages';
+import { Service } from '../types/service.types';
 import { UserId } from '../types/user.types';
 
 @Injectable()
@@ -35,6 +36,18 @@ export class IdentityClient {
   async deleteById(id: UserId): Promise<UserDto> {
     return firstValueFrom(
       this.client.send<UserDto, UserId>(IdentityMessage.DELETE_BY_ID, id),
+    );
+  }
+
+  async login(data: LoginDto): Promise<TokensDto> {
+    return firstValueFrom(
+      this.client.send<TokensDto, LoginDto>(IdentityMessage.LOGIN, data),
+    );
+  }
+
+  async refresh(userId: UserId): Promise<TokensDto> {
+    return firstValueFrom(
+      this.client.send<TokensDto, UserId>(IdentityMessage.REFRESH, userId),
     );
   }
 }

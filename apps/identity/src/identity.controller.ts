@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
+import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
 import {
   CreateUserDto,
   UpdateUserDto,
@@ -33,5 +34,15 @@ export class IdentityController {
   @MessagePattern(IdentityMessage.DELETE_BY_ID)
   async deleteById(@Payload() id: UserId): Promise<UserDto> {
     return this.identity.deleteById(id);
+  }
+
+  @MessagePattern(IdentityMessage.LOGIN)
+  async login(@Payload() data: LoginDto): Promise<TokensDto> {
+    return this.identity.login(data);
+  }
+
+  @MessagePattern(IdentityMessage.REFRESH)
+  async refresh(@Payload() userId: UserId): Promise<TokensDto> {
+    return this.identity.refresh(userId);
   }
 }

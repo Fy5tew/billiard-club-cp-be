@@ -3,7 +3,7 @@ import { QueryFailedError } from 'typeorm';
 import {
   DatabaseError,
   DatabaseErrorCode,
-} from '../constants/database-error.constants';
+} from '../types/database-error.types';
 
 type DatabaseErrorHandlerContext<T extends (...args: any[]) => any> = {
   error: DatabaseError;

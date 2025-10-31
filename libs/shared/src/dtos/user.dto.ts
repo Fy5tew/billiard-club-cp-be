@@ -1,16 +1,21 @@
 import { OmitType, PickType } from '@nestjs/mapped-types';
+import { Exclude, Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty } from 'class-validator';
 
-import { UserId } from '../types/user.types';
+import type { UserId } from '../types/user.types';
 
 export class UserDto {
+  @Expose()
   id: UserId;
 
+  @Expose()
   @IsEmail()
   email: string;
 
+  @Expose()
   name: string;
 
+  @Expose()
   surname: string;
 }
 

@@ -15,6 +15,7 @@ nconf.env({
 @Injectable()
 export class ConfigService implements Config {
   DB: Config['DB'];
+  JWT: Config['JWT'];
   API_GATEWAY: Config['API_GATEWAY'];
   IDENTITY: Config['IDENTITY'];
 

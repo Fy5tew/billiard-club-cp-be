@@ -4,14 +4,27 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'bcrypt';
+import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 
-import { DatabaseErrorCode } from '@app/shared/constants/database-error.constants';
+import { ConfigService } from '@app/shared/config/config.service';
 import { CatchDatabaseError } from '@app/shared/decorators/catch-database-error.decorators';
-import { CreateUserDto, UpdateUserDto } from '@app/shared/dtos/user.dto';
+import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserDto,
+} from '@app/shared/dtos/user.dto';
 import { UserEntity } from '@app/shared/entities/user.entity';
+import {
+  AccessTokenPayload,
+  RefreshTokenPayload,
+  TokenType,
+} from '@app/shared/types/auth.types';
+import { DatabaseErrorCode } from '@app/shared/types/database-error.types';
 import type { UserId } from '@app/shared/types/user.types';
 
 import { HASH_ROUNDS } from './identity.constants';
@@ -21,6 +34,8 @@ export class IdentityService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly users: Repository<UserEntity>,
+    private readonly jwtService: JwtService,
+    private readonly config: ConfigService,
   ) {}
 
   private async hashPassword(password: string): Promise<string> {
@@ -32,6 +47,37 @@ export class IdentityService {
     hash: string,
   ): Promise<boolean> {
     return bcrypt.compare(password, hash);
+  }
+
+  private async generateAccessToken(user: UserDto): Promise<string> {
+    const { ACCESS_EXPIRES } = this.config.JWT;
+
+    return await this.jwtService.signAsync<AccessTokenPayload>(
+      {
+        tokenType: TokenType.ACCESS,
+        user: plainToInstance(UserDto, user, { excludeExtraneousValues: true }),
+      },
+      { expiresIn: ACCESS_EXPIRES },
+    );
+  }
+
+  private async generateRefreshToken({ id }: UserDto): Promise<string> {
+    const { REFRESH_EXPIRES } = this.config.JWT;
+
+    return await this.jwtService.signAsync<RefreshTokenPayload>(
+      {
+        tokenType: TokenType.REFRESH,
+        userId: id,
+      },
+      { expiresIn: REFRESH_EXPIRES },
+    );
+  }
+
+  private async generateTokens(user: UserDto): Promise<TokensDto> {
+    return {
+      accessToken: await this.generateAccessToken(user),
+      refreshToken: await this.generateRefreshToken(user),
+    };
   }
 
   @CatchDatabaseError(
@@ -60,7 +106,7 @@ export class IdentityService {
     DatabaseErrorCode.INVALID_TEXT_REPRESENTATION,
     ({ args: [id] }) => {
       throw new BadRequestException(
-        `Invalid UUID format provided for user ID: ${id}`,
+        `Invalid UUID format provided for user ID: '${id}'`,
       );
     },
   )
@@ -68,7 +114,17 @@ export class IdentityService {
     const user = await this.users.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException(`User with id ${id} does not exist`);
+      throw new NotFoundException(`User with id '${id}' does not exist`);
+    }
+
+    return user;
+  }
+
+  async getByEmail(email: string): Promise<UserEntity> {
+    const user = await this.users.findOne({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException(`User with enail '${email}' does not exist`);
     }
 
     return user;
@@ -80,5 +136,33 @@ export class IdentityService {
     await this.users.remove(user);
 
     return user;
+  }
+
+  async login({ email, password }: LoginDto): Promise<TokensDto> {
+    try {
+      const user = await this.getByEmail(email);
+      const isValidPassword = await this.comparePasswords(
+        password,
+        user.password,
+      );
+
+      if (!isValidPassword) {
+        throw new BadRequestException('Invalid email or password');
+      }
+
+      return this.generateTokens(user);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new BadRequestException('Invalid email or password');
+      }
+
+      throw error;
+    }
+  }
+
+  async refresh(userId: UserId): Promise<TokensDto> {
+    const user = await this.getById(userId);
+
+    return this.generateTokens(user);
   }
 }
