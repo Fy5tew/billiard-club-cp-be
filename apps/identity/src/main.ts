@@ -3,6 +3,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 import { ConfigService } from '@app/shared/config/config.service';
+import { HttpToRpcExceptionFilter } from '@app/shared/filters/http-to-rpc-exception.filter';
 
 import { IdentityModule } from './identity.module';
 
@@ -28,6 +29,8 @@ async function bootstrap() {
   app.useGlobalInterceptors(
     new ClassSerializerInterceptor(appContext.get(Reflector)),
   );
+
+  app.useGlobalFilters(new HttpToRpcExceptionFilter());
 
   await app.listen();
 }

@@ -5,9 +5,8 @@ import { ConfigModule } from '@app/shared/config/config.module';
 import { UserEntity } from '@app/shared/entities/user.entity';
 import { registerDatabase } from '@app/shared/utils/register-database.util';
 
-import { AuthService } from './auth.service';
 import { IdentityController } from './identity.controller';
-import { UsersService } from './users.service';
+import { IdentityService } from './identity.service';
 
 @Module({
   imports: [
@@ -15,7 +14,7 @@ import { UsersService } from './users.service';
     registerDatabase(),
     TypeOrmModule.forFeature([UserEntity]),
   ],
-  providers: [AuthService, UsersService],
+  providers: [IdentityService],
   controllers: [IdentityController],
 })
 export class IdentityModule {}

@@ -1,8 +1,10 @@
 import { OmitType, PickType } from '@nestjs/mapped-types';
 import { IsEmail, IsNotEmpty } from 'class-validator';
 
+import { UserId } from '../types/user.types';
+
 export class UserDto {
-  id: string;
+  id: UserId;
 
   @IsEmail()
   email: string;
@@ -17,8 +19,4 @@ export class CreateUserDto extends OmitType(UserDto, ['id']) {
   password: string;
 }
 
-export class UpdateUserDto extends PickType(UserDto, [
-  'id',
-  'name',
-  'surname',
-]) {}
+export class UpdateUserDto extends PickType(UserDto, ['name', 'surname']) {}

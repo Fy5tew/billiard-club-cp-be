@@ -2,6 +2,8 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 
 import { ConfigService } from '@app/shared/config/config.service';
+import { RpcToHttpExceptionFilter } from '@app/shared/filters/rpc-to-http-exception.filter';
+import { RpcClientErrorInterceptor } from '@app/shared/interceptors/rpc-client-error.interceptor';
 
 import { ApiGatewayModule } from './api-gateway.module';
 
@@ -18,7 +20,9 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.useGlobalInterceptors(
     new ClassSerializerInterceptor(appContext.get(Reflector)),
+    new RpcClientErrorInterceptor(),
   );
+  app.useGlobalFilters(new RpcToHttpExceptionFilter());
 
   await app.listen(PORT, HOST);
 }

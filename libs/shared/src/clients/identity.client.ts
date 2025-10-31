@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { Service } from '../constants/service.constants';
 import { CreateUserDto, UpdateUserDto, UserDto } from '../dtos/user.dto';
 import { IdentityMessage } from '../messages/identity.messages';
+import { UserId } from '../types/user.types';
 
 @Injectable()
 export class IdentityClient {
@@ -16,24 +17,24 @@ export class IdentityClient {
     );
   }
 
-  async update(data: UpdateUserDto): Promise<UserDto> {
+  async update(id: UserId, data: UpdateUserDto): Promise<UserDto> {
     return firstValueFrom(
-      this.client.send<UserDto, UpdateUserDto>(IdentityMessage.UPDATE, data),
-    );
-  }
-
-  async getById(id: UserDto['id']): Promise<UserDto> {
-    return firstValueFrom(
-      this.client.send<UserDto, UserDto['id']>(IdentityMessage.GET_BY_ID, id),
-    );
-  }
-
-  async deleteById(id: UserDto['id']): Promise<UserDto> {
-    return firstValueFrom(
-      this.client.send<UserDto, UserDto['id']>(
-        IdentityMessage.DELETE_BY_ID,
-        id,
+      this.client.send<UserDto, [UserId, UpdateUserDto]>(
+        IdentityMessage.UPDATE,
+        [id, data],
       ),
+    );
+  }
+
+  async getById(id: UserId): Promise<UserDto> {
+    return firstValueFrom(
+      this.client.send<UserDto, UserId>(IdentityMessage.GET_BY_ID, id),
+    );
+  }
+
+  async deleteById(id: UserId): Promise<UserDto> {
+    return firstValueFrom(
+      this.client.send<UserDto, UserId>(IdentityMessage.DELETE_BY_ID, id),
     );
   }
 }

@@ -14,6 +14,7 @@ import {
   UpdateUserDto,
   UserDto,
 } from '@app/shared/dtos/user.dto';
+import type { UserId } from '@app/shared/types/user.types';
 
 import { Route } from './api-gateway.constants';
 
@@ -21,23 +22,26 @@ import { Route } from './api-gateway.constants';
 export class ApiGatewayController {
   constructor(private readonly identityClient: IdentityClient) {}
 
-  @Post(Route.USERS)
+  @Post(Route.REGISTER)
   async register(@Body() data: CreateUserDto): Promise<UserDto> {
     return this.identityClient.register(data);
   }
 
-  @Put(Route.USERS)
-  async update(@Body() data: UpdateUserDto): Promise<UserDto> {
-    return this.identityClient.update(data);
+  @Put(Route.PROFILE)
+  async update(
+    @Param('id') id: UserId,
+    @Body() data: UpdateUserDto,
+  ): Promise<UserDto> {
+    return this.identityClient.update(id, data);
   }
 
   @Get(Route.PROFILE)
-  async getById(@Param('id') id: UserDto['id']): Promise<UserDto> {
+  async getById(@Param('id') id: UserId): Promise<UserDto> {
     return this.identityClient.getById(id);
   }
 
   @Delete(Route.PROFILE)
-  async deleteById(@Param('id') id: UserDto['id']): Promise<UserDto> {
+  async deleteById(@Param('id') id: UserId): Promise<UserDto> {
     return this.identityClient.deleteById(id);
   }
 }
