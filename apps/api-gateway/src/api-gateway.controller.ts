@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -58,6 +60,7 @@ export class ApiGatewayController {
   }
 
   @PublicRoute()
+  @HttpCode(HttpStatus.OK)
   @Post(Route.LOGIN)
   async login(
     @Body() data: LoginDto,

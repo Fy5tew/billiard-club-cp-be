@@ -27,8 +27,6 @@ import {
 import { DatabaseErrorCode } from '@app/shared/types/database-error.types';
 import type { UserId } from '@app/shared/types/user.types';
 
-import { HASH_ROUNDS } from './identity.constants';
-
 @Injectable()
 export class IdentityService {
   constructor(
@@ -39,7 +37,8 @@ export class IdentityService {
   ) {}
 
   private async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, HASH_ROUNDS);
+    const salt = await bcrypt.genSalt();
+    return bcrypt.hash(password, salt);
   }
 
   private async comparePasswords(
