@@ -7,6 +7,7 @@ import { RpcToHttpExceptionFilter } from '@app/shared/filters/rpc-to-http-except
 import { RpcClientErrorInterceptor } from '@app/shared/interceptors/rpc-client-error.interceptor';
 
 import { ApiGatewayModule } from './api-gateway.module';
+import { JwtAccessAuthGuard } from './auth/jwt-access.guard';
 
 async function bootstrap() {
   const appContext =
@@ -17,6 +18,8 @@ async function bootstrap() {
   const { HOST, PORT } = configService.API_GATEWAY;
 
   const app = await NestFactory.create(ApiGatewayModule);
+
+  app.useGlobalGuards(new JwtAccessAuthGuard(appContext.get(Reflector)));
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.useGlobalInterceptors(
