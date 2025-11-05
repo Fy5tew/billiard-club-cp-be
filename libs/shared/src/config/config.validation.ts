@@ -9,6 +9,14 @@ const dbConfigSchema = z.object({
   PORT: z.coerce.number(),
 });
 
+const mailServerConfigSchema = z.object({
+  HOST: z.string(),
+  PORT: z.coerce.number(),
+  USER: z.string(),
+  PASSWORD: z.string(),
+  SECURE: z.coerce.boolean(),
+});
+
 const jwtConfigSchema = z.object({
   SECRET: z.string(),
   ACCESS_EXPIRES: z.custom<StringValue>(
@@ -32,11 +40,18 @@ const serviceConfigSchema = z.object({
   PORT: z.coerce.number(),
 });
 
+const notificationServiceConfigSchema = serviceConfigSchema.extend({
+  SENDER_NAME: z.string(),
+  SENDER_EMAIL: z.string(),
+});
+
 export const configSchema = z.object({
   DB: dbConfigSchema,
+  MAIL_SERVER: mailServerConfigSchema,
   JWT: jwtConfigSchema,
   API_GATEWAY: serviceConfigSchema,
   IDENTITY: serviceConfigSchema,
+  NOTIFICATION: notificationServiceConfigSchema,
 });
 
 export type Config = z.infer<typeof configSchema>;

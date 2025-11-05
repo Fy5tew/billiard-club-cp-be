@@ -10,6 +10,7 @@ import bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 
+import { NotificationClient } from '@app/shared/clients/notification.client';
 import { ConfigService } from '@app/shared/config/config.service';
 import { CatchDatabaseError } from '@app/shared/decorators/catch-database-error.decorators';
 import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
@@ -34,6 +35,7 @@ export class IdentityService {
     private readonly users: Repository<UserEntity>,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly notificationClient: NotificationClient,
   ) {}
 
   private async hashPassword(password: string): Promise<string> {
@@ -79,6 +81,14 @@ export class IdentityService {
     };
   }
 
+  private sendWelcomeEmail({ email }: UserDto) {
+    this.notificationClient.sendEmail({
+      to: email,
+      subject: 'Welcome on board',
+      message: 'Hello, new client!',
+    });
+  }
+
   @CatchDatabaseError(
     DatabaseErrorCode.UNIQUE_VIOLATION,
     ({ args: [{ email }] }) => {
@@ -90,7 +100,9 @@ export class IdentityService {
       ...data,
       password: await this.hashPassword(password),
     });
-    return await this.users.save(user);
+    const newUser = await this.users.save(user);
+    this.sendWelcomeEmail(newUser);
+    return newUser;
   }
 
   async update(id: UserId, data: UpdateUserDto): Promise<UserEntity> {

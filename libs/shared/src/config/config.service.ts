@@ -15,9 +15,11 @@ nconf.env({
 @Injectable()
 export class ConfigService implements Config {
   DB: Config['DB'];
+  MAIL_SERVER: Config['MAIL_SERVER'];
   JWT: Config['JWT'];
   API_GATEWAY: Config['API_GATEWAY'];
   IDENTITY: Config['IDENTITY'];
+  NOTIFICATION: Config['NOTIFICATION'];
 
   constructor() {
     const config = configSchema.parse(nconf.get());

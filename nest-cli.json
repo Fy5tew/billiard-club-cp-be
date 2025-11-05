@@ -21,6 +21,15 @@
         "tsConfigPath": "apps/identity/tsconfig.app.json"
       }
     },
+    "notification": {
+      "type": "application",
+      "root": "apps/notification",
+      "entryFile": "main",
+      "sourceRoot": "apps/notification/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/notification/tsconfig.app.json"
+      }
+    },
     "shared": {
       "type": "library",
       "root": "libs/shared",
