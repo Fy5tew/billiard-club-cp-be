@@ -17,18 +17,30 @@ services:
     ports:
       - ${MAILDEV_WEB_PORT}:1080
 
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - ${RABBITMQ_WEB_PORT}:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ__USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ__PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   api-gateway:
     container_name: api_gateway
     build:
       context: .
       dockerfile: ./apps/api-gateway/Dockerfile
     restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      IDENTITY__HOST: identity_service
     ports:
       - "${API_GATEWAY__PORT}:${API_GATEWAY__PORT}"
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
 
   identity_service:
     container_name: identity_service
@@ -38,9 +50,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    environment:
-      NOTIFICATION__HOST: notification_service
     depends_on:
+      - rabbitmq
       - postgres
 
   notification_service:
@@ -52,7 +63,9 @@ services:
     env_file:
       - .env
     depends_on:
+      - rabbitmq
       - maildev
 
 volumes:
   postgres_data:
+  rabbitmq_data:

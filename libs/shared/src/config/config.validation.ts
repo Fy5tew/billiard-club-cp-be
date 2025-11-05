@@ -1,22 +1,6 @@
 import ms, { StringValue } from 'ms';
 import z from 'zod';
 
-const dbConfigSchema = z.object({
-  USER: z.string(),
-  PASSWORD: z.string(),
-  NAME: z.string(),
-  HOST: z.string(),
-  PORT: z.coerce.number(),
-});
-
-const mailServerConfigSchema = z.object({
-  HOST: z.string(),
-  PORT: z.coerce.number(),
-  USER: z.string(),
-  PASSWORD: z.string(),
-  SECURE: z.coerce.boolean(),
-});
-
 const jwtConfigSchema = z.object({
   SECRET: z.string(),
   ACCESS_EXPIRES: z.custom<StringValue>(
@@ -35,12 +19,40 @@ const jwtConfigSchema = z.object({
   ),
 });
 
-const serviceConfigSchema = z.object({
+const dbConfigSchema = z.object({
+  HOST: z.string(),
+  PORT: z.coerce.number(),
+  USER: z.string(),
+  PASSWORD: z.string(),
+  NAME: z.string(),
+});
+
+const mailServerConfigSchema = z.object({
+  HOST: z.string(),
+  PORT: z.coerce.number(),
+  USER: z.string(),
+  PASSWORD: z.string(),
+  SECURE: z.coerce.boolean(),
+});
+
+const rabbitmqConfigSchema = z.object({
+  HOST: z.string(),
+  PORT: z.coerce.number(),
+  USER: z.string(),
+  PASSWORD: z.string(),
+});
+
+const apiGatewayConfigSchema = z.object({
   HOST: z.string(),
   PORT: z.coerce.number(),
 });
 
-const notificationServiceConfigSchema = serviceConfigSchema.extend({
+const identityConfigSchema = z.object({
+  RMQ_QUEUE: z.string(),
+});
+
+const notificationServiceConfigSchema = z.object({
+  RMQ_QUEUE: z.string(),
   SENDER_NAME: z.string(),
   SENDER_EMAIL: z.string(),
 });
@@ -48,9 +60,10 @@ const notificationServiceConfigSchema = serviceConfigSchema.extend({
 export const configSchema = z.object({
   DB: dbConfigSchema,
   MAIL_SERVER: mailServerConfigSchema,
+  RABBITMQ: rabbitmqConfigSchema,
   JWT: jwtConfigSchema,
-  API_GATEWAY: serviceConfigSchema,
-  IDENTITY: serviceConfigSchema,
+  API_GATEWAY: apiGatewayConfigSchema,
+  IDENTITY: identityConfigSchema,
   NOTIFICATION: notificationServiceConfigSchema,
 });
 

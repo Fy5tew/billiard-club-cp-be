@@ -16,6 +16,7 @@ nconf.env({
 export class ConfigService implements Config {
   DB: Config['DB'];
   MAIL_SERVER: Config['MAIL_SERVER'];
+  RABBITMQ: Config['RABBITMQ'];
   JWT: Config['JWT'];
   API_GATEWAY: Config['API_GATEWAY'];
   IDENTITY: Config['IDENTITY'];

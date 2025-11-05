@@ -11,13 +11,15 @@ export const registerClient = (service: Service) => {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const { HOST, PORT } = configService[service];
+        const { RMQ_QUEUE } = configService[service];
+        const { HOST, PORT, USER, PASSWORD } = configService.RABBITMQ;
 
         return {
-          transport: Transport.TCP,
+          transport: Transport.RMQ,
           options: {
-            host: HOST,
-            port: PORT,
+            urls: [`amqp://${USER}:${PASSWORD}@${HOST}:${PORT}`],
+            queue: RMQ_QUEUE,
+            queueOptions: { durable: true },
           },
         };
       },

@@ -13,15 +13,17 @@ async function bootstrap() {
 
   const configService = appContext.get(ConfigService);
 
-  const { HOST, PORT } = configService.NOTIFICATION;
+  const { RMQ_QUEUE } = configService.NOTIFICATION;
+  const { HOST, PORT, USER, PASSWORD } = configService.RABBITMQ;
 
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     NotificationModule,
     {
-      transport: Transport.TCP,
+      transport: Transport.RMQ,
       options: {
-        host: HOST,
-        port: PORT,
+        urls: [`amqp://${USER}:${PASSWORD}@${HOST}:${PORT}`],
+        queue: RMQ_QUEUE,
+        queueOptions: { durable: true },
       },
     },
   );
