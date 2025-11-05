@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { IdentityController } from './identity.controller';
 
-describe('IdentityController', () => {
+describe(IdentityController.name, () => {
   let identityController: IdentityController;
 
   beforeEach(async () => {
