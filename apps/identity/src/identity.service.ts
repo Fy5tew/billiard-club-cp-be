@@ -11,7 +11,6 @@ import bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 
-import { NotificationClient } from '@app/shared/clients/notification.client';
 import { ConfigService } from '@app/shared/config/config.service';
 import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
 import type {
@@ -22,6 +21,7 @@ import type {
 import { UserDto } from '@app/shared/dtos/user.dto';
 import { UserEntity } from '@app/shared/entities/user.entity';
 import { CatchDatabaseError } from '@app/shared/helpers/catch-database-error.decorator';
+import { NotificationClient } from '@app/shared/services/notification/notification.client';
 import {
   AccessTokenPayload,
   RefreshTokenPayload,

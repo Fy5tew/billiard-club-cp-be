@@ -2,7 +2,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 
 import { ConfigModule } from '../config/config.module';
 import { ConfigService } from '../config/config.service';
-import { Service } from '../types/service.types';
+import { Service } from '../services/services.types';
 
 export const registerClient = (service: Service) => {
   return ClientsModule.registerAsync([

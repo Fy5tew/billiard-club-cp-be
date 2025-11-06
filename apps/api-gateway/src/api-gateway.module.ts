@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 
-import { IdentityClient } from '@app/shared/clients/identity.client';
 import { ConfigModule } from '@app/shared/config/config.module';
 import { registerClient } from '@app/shared/helpers/register-client.util';
-import { Service } from '@app/shared/types/service.types';
+import { IdentityClient } from '@app/shared/services/identity/identity.client';
+import { Service } from '@app/shared/services/services.types';
 
 import { JwtAccessStrategy } from './auth/jwt-access.strategy';
 import { JwtRefreshStrategy } from './auth/jwt-refresh.strategy';

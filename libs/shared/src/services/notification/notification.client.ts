@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
-import { EmailNotificationDto } from '../dtos/notification.dto';
-import { NotificationMessage } from '../messages/notification.messages';
-import { Service } from '../types/service.types';
+import { NotificationMessage } from './notification.messages';
+import { EmailNotificationDto } from '../../dtos/notification.dto';
+import { Service } from '../services.types';
 
 @Injectable()
 export class NotificationClient {

@@ -18,9 +18,9 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 
-import { IdentityClient } from '@app/shared/clients/identity.client';
 import { AccessTokenDto, LoginDto } from '@app/shared/dtos/auth.dto';
 import { CreateUserDto, UserDto } from '@app/shared/dtos/user.dto';
+import { IdentityClient } from '@app/shared/services/identity/identity.client';
 import type { RequestWithUserId } from '@app/shared/types/auth.types';
 
 import { JWT_REFRESH_TOKEN_COOKIE } from '../auth/auth.constants';

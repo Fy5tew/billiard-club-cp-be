@@ -2,15 +2,15 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
-import { LoginDto, TokensDto } from '../dtos/auth.dto';
+import { IdentityMessage } from './identity.messages';
+import { LoginDto, TokensDto } from '../../dtos/auth.dto';
 import type {
   CreateUserDto,
   UpdateUserDto,
   UserDto,
   UserId,
-} from '../dtos/user.dto';
-import { IdentityMessage } from '../messages/identity.messages';
-import { Service } from '../types/service.types';
+} from '../../dtos/user.dto';
+import { Service } from '../services.types';
 
 @Injectable()
 export class IdentityClient {

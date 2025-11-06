@@ -15,9 +15,9 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 
-import { IdentityClient } from '@app/shared/clients/identity.client';
 import type { UserId } from '@app/shared/dtos/user.dto';
 import { UserDto, UpdateUserDto } from '@app/shared/dtos/user.dto';
+import { IdentityClient } from '@app/shared/services/identity/identity.client';
 
 import { UsersRoute } from '../constants/users.constants';
 

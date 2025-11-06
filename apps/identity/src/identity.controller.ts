@@ -8,7 +8,7 @@ import type {
   UserDto,
   UserId,
 } from '@app/shared/dtos/user.dto';
-import { IdentityMessage } from '@app/shared/messages/identity.messages';
+import { IdentityMessage } from '@app/shared/services/identity/identity.messages';
 
 import { IdentityService } from './identity.service';
 
