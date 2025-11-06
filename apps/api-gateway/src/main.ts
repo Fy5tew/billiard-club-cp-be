@@ -5,8 +5,8 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 
 import { ConfigService } from '@app/shared/config/config.service';
-import { RpcToHttpExceptionFilter } from '@app/shared/filters/rpc-to-http-exception.filter';
-import { RpcClientErrorInterceptor } from '@app/shared/interceptors/rpc-client-error.interceptor';
+import { RpcClientErrorInterceptor } from '@app/shared/helpers/rpc-client-error.interceptor';
+import { RpcToHttpExceptionFilter } from '@app/shared/helpers/rpc-to-http-exception.filter';
 
 import { ApiGatewayModule } from './api-gateway.module';
 import { JwtAccessAuthGuard } from './auth/jwt-access.guard';

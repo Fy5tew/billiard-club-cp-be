@@ -3,7 +3,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 import { ConfigService } from '@app/shared/config/config.service';
-import { HttpToRpcExceptionFilter } from '@app/shared/filters/http-to-rpc-exception.filter';
+import { HttpToRpcExceptionFilter } from '@app/shared/helpers/http-to-rpc-exception.filter';
 
 import { IdentityModule } from './identity.module';
 
