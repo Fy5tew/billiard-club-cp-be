@@ -2,13 +2,13 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
 import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
-import {
+import type {
   CreateUserDto,
   UpdateUserDto,
   UserDto,
+  UserId,
 } from '@app/shared/dtos/user.dto';
 import { IdentityMessage } from '@app/shared/messages/identity.messages';
-import type { UserId } from '@app/shared/types/user.types';
 
 import { IdentityService } from './identity.service';
 

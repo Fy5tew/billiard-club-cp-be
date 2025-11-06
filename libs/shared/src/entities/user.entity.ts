@@ -1,7 +1,7 @@
 import { Exclude } from 'class-transformer';
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-import type { UserId } from '../types/user.types';
+import type { UserId } from '../dtos/user.dto';
 
 @Entity('users')
 export class UserEntity {

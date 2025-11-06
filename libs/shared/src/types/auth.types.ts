@@ -1,7 +1,6 @@
 import { Request } from 'express';
 
-import { UserId } from './user.types';
-import { UserDto } from '../dtos/user.dto';
+import { UserDto, UserId } from '../dtos/user.dto';
 
 export enum TokenType {
   ACCESS = 'access',

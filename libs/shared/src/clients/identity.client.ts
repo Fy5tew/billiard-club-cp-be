@@ -3,10 +3,14 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
 import { LoginDto, TokensDto } from '../dtos/auth.dto';
-import { CreateUserDto, UpdateUserDto, UserDto } from '../dtos/user.dto';
+import type {
+  CreateUserDto,
+  UpdateUserDto,
+  UserDto,
+  UserId,
+} from '../dtos/user.dto';
 import { IdentityMessage } from '../messages/identity.messages';
 import { Service } from '../types/service.types';
-import { UserId } from '../types/user.types';
 
 @Injectable()
 export class IdentityClient {

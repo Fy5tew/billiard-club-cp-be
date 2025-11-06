@@ -9,6 +9,13 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiBody,
+  ApiCookieAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { IdentityClient } from '@app/shared/clients/identity.client';
@@ -21,16 +28,51 @@ import { PublicRoute } from '../auth/auth.decorators';
 import { JwtRefreshGuard } from '../auth/jwt-refresh.guard';
 import { AuthRoute } from '../constants/auth.constants';
 
+@ApiTags('Auth')
 @Controller(AuthRoute.BASE)
 export class AuthController {
   constructor(private readonly identityClient: IdentityClient) {}
 
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ description: 'New user data', type: CreateUserDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'New user is registered successfully',
+    type: UserDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'User with same email is already exists',
+  })
   @PublicRoute()
   @Post(AuthRoute.REGISTER)
   async register(@Body() data: CreateUserDto): Promise<UserDto> {
     return this.identityClient.register(data);
   }
 
+  @ApiOperation({
+    summary: 'Login to the system and obtain tokens',
+    description:
+      'Generates access and refresh tokens for the user. Sets the refresh token in cookies and returns the access token to the user',
+  })
+  @ApiBody({ description: 'User login credentials', type: LoginDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User logged in successfully',
+    type: AccessTokenDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid credentials',
+  })
   @PublicRoute()
   @HttpCode(HttpStatus.OK)
   @Post(AuthRoute.LOGIN)
@@ -45,6 +87,29 @@ export class AuthController {
     return { accessToken };
   }
 
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: 'Generate new tokens pair',
+    description:
+      'Generates access and refresh tokens for the user. Sets the refresh token in cookies and returns the access token to the user',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Tokens pair generated successfully',
+    type: AccessTokenDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'The refresh token is invalid or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User with ID from refresh token was not found',
+  })
   @PublicRoute()
   @UseGuards(JwtRefreshGuard)
   @Get(AuthRoute.REFRESH)

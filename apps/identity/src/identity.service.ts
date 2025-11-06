@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,11 +15,12 @@ import { NotificationClient } from '@app/shared/clients/notification.client';
 import { ConfigService } from '@app/shared/config/config.service';
 import { CatchDatabaseError } from '@app/shared/decorators/catch-database-error.decorators';
 import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
-import {
+import type {
   CreateUserDto,
   UpdateUserDto,
-  UserDto,
+  UserId,
 } from '@app/shared/dtos/user.dto';
+import { UserDto } from '@app/shared/dtos/user.dto';
 import { UserEntity } from '@app/shared/entities/user.entity';
 import {
   AccessTokenPayload,
@@ -26,7 +28,6 @@ import {
   TokenType,
 } from '@app/shared/types/auth.types';
 import { DatabaseErrorCode } from '@app/shared/types/database-error.types';
-import type { UserId } from '@app/shared/types/user.types';
 
 @Injectable()
 export class IdentityService {
@@ -158,13 +159,13 @@ export class IdentityService {
       );
 
       if (!isValidPassword) {
-        throw new BadRequestException('Invalid email or password');
+        throw new UnauthorizedException('Invalid creadentials');
       }
 
       return this.generateTokens(user);
     } catch (error) {
       if (error instanceof NotFoundException) {
-        throw new BadRequestException('Invalid email or password');
+        throw new UnauthorizedException('Invalid credentials');
       }
 
       throw error;

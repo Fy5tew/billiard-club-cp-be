@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
@@ -8,6 +10,7 @@ import { RpcClientErrorInterceptor } from '@app/shared/interceptors/rpc-client-e
 
 import { ApiGatewayModule } from './api-gateway.module';
 import { JwtAccessAuthGuard } from './auth/jwt-access.guard';
+import { setupDocs } from './config/docs.config';
 
 async function bootstrap() {
   const appContext =
@@ -29,6 +32,8 @@ async function bootstrap() {
   app.useGlobalFilters(new RpcToHttpExceptionFilter());
 
   app.use(cookieParser());
+
+  setupDocs(app);
 
   await app.listen(PORT, HOST);
 }

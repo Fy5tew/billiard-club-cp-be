@@ -9,11 +9,12 @@ import { registerClient } from '@app/shared/utils/register-client.util';
 import { JwtAccessStrategy } from './auth/jwt-access.strategy';
 import { JwtRefreshStrategy } from './auth/jwt-refresh.strategy';
 import { AuthController } from './controllers/auth.controller';
+import { HomeController } from './controllers/home.controller';
 import { UsersController } from './controllers/users.controller';
 
 @Module({
   imports: [PassportModule, ConfigModule, registerClient(Service.IDENTITY)],
-  controllers: [AuthController, UsersController],
+  controllers: [HomeController, AuthController, UsersController],
   providers: [IdentityClient, JwtAccessStrategy, JwtRefreshStrategy],
 })
 export class ApiGatewayModule {}
