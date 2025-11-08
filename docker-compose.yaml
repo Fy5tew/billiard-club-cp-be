@@ -1,7 +1,7 @@
 services:
-  public_proxy:
+  public-proxy:
     image: nginx:latest
-    container_name: public_proxy
+    container_name: public-proxy
     restart: unless-stopped
     env_file:
       - .env
@@ -10,7 +10,7 @@ services:
     environment:
       NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
     networks:
-      app_network:
+      app-network:
         aliases:
           - ${S3_DOMAIN}
     volumes:
@@ -36,9 +36,9 @@ services:
       POSTGRES_PASSWORD: ${DB__PASSWORD}
       POSTGRES_DB: ${DB__NAME}
     networks:
-      - app_network
+      - app-network
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB__USER} -d ${DB__NAME}"]
       interval: 5s
@@ -52,7 +52,7 @@ services:
     env_file:
       - .env
     networks:
-      - app_network
+      - app-network
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:1080"]
       interval: 5s
@@ -69,9 +69,9 @@ services:
       MINIO_BROWSER_REDIRECT_URL: http://${S3_DOMAIN}/console
     command: server /data --console-address ":9001"
     networks:
-      - app_network
+      - app-network
     volumes:
-      - minio_data:/data
+      - minio-data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
@@ -88,9 +88,9 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ__USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ__PASSWORD}
     networks:
-      - app_network
+      - app-network
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 5s
@@ -98,7 +98,7 @@ services:
       retries: 5
 
   api-gateway:
-    container_name: api_gateway
+    container_name: api-gateway
     build:
       context: .
       dockerfile: ./apps/api-gateway/Dockerfile
@@ -106,13 +106,13 @@ services:
     env_file:
       - .env
     networks:
-      - app_network
+      - app-network
     depends_on:
       rabbitmq:
         condition: service_healthy
 
-  identity_service:
-    container_name: identity_service
+  identity-service:
+    container_name: identity-service
     build:
       context: .
       dockerfile: ./apps/identity/Dockerfile
@@ -120,15 +120,15 @@ services:
     env_file:
       - .env
     networks:
-      - app_network
+      - app-network
     depends_on:
       rabbitmq:
         condition: service_healthy
       postgres:
         condition: service_healthy
 
-  notification_service:
-    container_name: notification_service
+  notification-service:
+    container_name: notification-service
     build:
       context: .
       dockerfile: ./apps/notification/Dockerfile
@@ -136,15 +136,15 @@ services:
     env_file:
       - .env
     networks:
-      - app_network
+      - app-network
     depends_on:
       rabbitmq:
         condition: service_healthy
       maildev:
         condition: service_healthy
 
-  storage_service:
-    container_name: storage_service
+  storage-service:
+    container_name: storage-service
     build:
       context: .
       dockerfile: ./apps/storage/Dockerfile
@@ -152,19 +152,19 @@ services:
     env_file:
       - .env
     networks:
-      - app_network
+      - app-network
     depends_on:
       rabbitmq:
         condition: service_healthy
       minio:
         condition: service_healthy
-      public_proxy:
+      public-proxy:
         condition: service_started
 
 networks:
-  app_network:
+  app-network:
 
 volumes:
-  postgres_data:
-  minio_data:
-  rabbitmq_data:
+  postgres-data:
+  minio-data:
+  rabbitmq-data:
