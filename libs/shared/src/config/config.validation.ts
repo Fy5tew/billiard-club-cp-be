@@ -35,6 +35,15 @@ const mailServerConfigSchema = z.object({
   SECURE: z.coerce.boolean(),
 });
 
+const s3ConfigSchema = z.object({
+  ENDPOINT: z.string(),
+  PORT: z.coerce.number(),
+  ACCESS_KEY_ID: z.string(),
+  SECRET_ACCESS_KEY: z.string(),
+  SECURE: z.coerce.boolean(),
+  REGION: z.string(),
+});
+
 const rabbitmqConfigSchema = z.object({
   HOST: z.string(),
   PORT: z.coerce.number(),
@@ -57,14 +66,20 @@ const notificationServiceConfigSchema = z.object({
   SENDER_EMAIL: z.string(),
 });
 
+const storageServiceConfigSchema = z.object({
+  RMQ_QUEUE: z.string(),
+});
+
 export const configSchema = z.object({
   DB: dbConfigSchema,
   MAIL_SERVER: mailServerConfigSchema,
+  S3: s3ConfigSchema,
   RABBITMQ: rabbitmqConfigSchema,
   JWT: jwtConfigSchema,
   API_GATEWAY: apiGatewayConfigSchema,
   IDENTITY: identityConfigSchema,
   NOTIFICATION: notificationServiceConfigSchema,
+  STORAGE: storageServiceConfigSchema,
 });
 
 export type Config = z.infer<typeof configSchema>;
