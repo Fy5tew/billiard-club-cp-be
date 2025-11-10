@@ -5,7 +5,9 @@ import {
   Get,
   HttpStatus,
   Param,
+  Post,
   Put,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -72,11 +74,43 @@ export class UsersController {
     description: 'User was not found',
   })
   @Put(UsersRoute.PROFILE)
-  async update(
+  async updateById(
     @Param('id') id: UserId,
     @Body() data: UpdateUserDto,
   ): Promise<UserDto> {
-    return this.identityClient.update(id, data);
+    return this.identityClient.updateById(id, data);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user profile photo' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Updated user profile photo successfully',
+    type: UserDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User was not found',
+  })
+  @Post(UsersRoute.PHOTO)
+  async updateProfileById(
+    @Param('id') id: UserId,
+    @UploadedFile() { filename, buffer, mimetype }: Express.Multer.File,
+  ): Promise<UserDto> {
+    return this.identityClient.updatePhotoById(id, {
+      filename,
+      buffer,
+      mimeType: mimetype,
+    });
   }
 
   @ApiBearerAuth()

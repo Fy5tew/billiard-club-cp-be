@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { NestMinioService } from 'nestjs-minio';
 
 import {
+  DeleteFileDto,
   GetFileUrlDto,
   UploadedFileDto,
   UploadFileDto,
@@ -39,5 +40,9 @@ export class StorageService {
     return await this.minioService
       .getMinio()
       .presignedGetObject(bucket, filename);
+  }
+
+  async deleteFile({ bucket, filename }: DeleteFileDto): Promise<void> {
+    return await this.minioService.getMinio().removeObject(bucket, filename);
   }
 }

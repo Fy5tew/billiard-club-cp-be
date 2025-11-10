@@ -48,4 +48,13 @@ export class StorageController {
   ) {
     return await this.storageClient.getFileUrl({ bucket, filename });
   }
+
+  @PublicRoute()
+  @Get('/delete')
+  deleteFile(
+    @Query('bucket') bucket: string,
+    @Query('filename') filename: string,
+  ) {
+    return this.storageClient.deleteFile({ bucket, filename });
+  }
 }

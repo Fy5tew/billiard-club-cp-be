@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 
 import type {
+  DeleteFileDto,
   GetFileUrlDto,
   UploadedFileDto,
   UploadFileDto,
@@ -22,5 +23,10 @@ export class StorageController {
   @MessagePattern(StorageMessage.GET_FILE_URL)
   async getFileUrl(data: GetFileUrlDto): Promise<string> {
     return this.storageService.getFileUrl(data);
+  }
+
+  @MessagePattern(StorageMessage.DELETE_FILE)
+  async deleteFile(data: DeleteFileDto): Promise<void> {
+    return this.storageService.deleteFile(data);
   }
 }

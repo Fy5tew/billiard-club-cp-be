@@ -7,6 +7,7 @@ import { LoginDto, TokensDto } from '../../dtos/auth.dto';
 import type {
   CreateUserDto,
   UpdateUserDto,
+  UpdateUserPhotoDto,
   UserDto,
   UserId,
 } from '../../dtos/user.dto';
@@ -22,10 +23,22 @@ export class IdentityClient {
     );
   }
 
-  async update(id: UserId, data: UpdateUserDto): Promise<UserDto> {
+  async updateById(id: UserId, data: UpdateUserDto): Promise<UserDto> {
     return firstValueFrom(
       this.client.send<UserDto, [UserId, UpdateUserDto]>(
-        IdentityMessage.UPDATE,
+        IdentityMessage.UPDATE_BY_ID,
+        [id, data],
+      ),
+    );
+  }
+
+  async updatePhotoById(
+    id: UserId,
+    data: UpdateUserPhotoDto,
+  ): Promise<UserDto> {
+    return firstValueFrom(
+      this.client.send<UserDto, [UserId, UpdateUserPhotoDto]>(
+        IdentityMessage.UPDATE_PHOTO_BY_ID,
         [id, data],
       ),
     );

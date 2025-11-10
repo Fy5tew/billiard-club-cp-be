@@ -20,4 +20,7 @@ export class UserEntity {
 
   @Column()
   surname: string;
+
+  @Column({ nullable: true })
+  photoFilename: string;
 }

@@ -5,6 +5,7 @@ import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
 import type {
   CreateUserDto,
   UpdateUserDto,
+  UpdateUserPhotoDto,
   UserDto,
   UserId,
 } from '@app/shared/dtos/user.dto';
@@ -21,9 +22,18 @@ export class IdentityController {
     return this.identity.create(data);
   }
 
-  @MessagePattern(IdentityMessage.UPDATE)
-  async update(@Payload() [id, data]: [UserId, UpdateUserDto]) {
-    return this.identity.update(id, data);
+  @MessagePattern(IdentityMessage.UPDATE_BY_ID)
+  async updateById(
+    @Payload() [id, data]: [UserId, UpdateUserDto],
+  ): Promise<UserDto> {
+    return this.identity.updateById(id, data);
+  }
+
+  @MessagePattern(IdentityMessage.UPDATE_PHOTO_BY_ID)
+  async updatePhotoById(
+    @Payload() [id, data]: [UserId, UpdateUserPhotoDto],
+  ): Promise<UserDto> {
+    return this.identity.updatePhotoById(id, data);
   }
 
   @MessagePattern(IdentityMessage.GET_BY_ID)

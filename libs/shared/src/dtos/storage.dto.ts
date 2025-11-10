@@ -1,13 +1,21 @@
-export type UploadFileDto = {
+export class UploadFileDto {
   bucket: string;
   filename: string;
   buffer: Buffer;
   mimeType: string;
-};
+}
 
-export type UploadedFileDto = {
+export class UploadedFileDto {
   etag: string;
   versionId: string | null;
-};
+}
 
-export type GetFileUrlDto = { bucket: string; filename: string };
+export class GetFileUrlDto {
+  bucket: string;
+  filename: string;
+}
+
+export class DeleteFileDto {
+  bucket: string;
+  filename: string;
+}

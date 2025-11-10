@@ -8,6 +8,7 @@ import { registerDatabase } from '@app/shared/helpers/register-database.util';
 import { registerJwt } from '@app/shared/helpers/register-jwt.util';
 import { NotificationClient } from '@app/shared/services/notification/notification.client';
 import { Service } from '@app/shared/services/services.types';
+import { StorageClient } from '@app/shared/services/storage/storage.client';
 
 import { IdentityController } from './identity.controller';
 import { IdentityService } from './identity.service';
@@ -19,8 +20,9 @@ import { IdentityService } from './identity.service';
     registerDatabase(),
     TypeOrmModule.forFeature([UserEntity]),
     registerClient(Service.NOTIFICATION),
+    registerClient(Service.STORAGE),
   ],
-  providers: [IdentityService, NotificationClient],
+  providers: [IdentityService, NotificationClient, StorageClient],
   controllers: [IdentityController],
 })
 export class IdentityModule {}

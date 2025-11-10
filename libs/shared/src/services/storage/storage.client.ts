@@ -3,6 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
 import {
+  DeleteFileDto,
   GetFileUrlDto,
   UploadedFileDto,
   UploadFileDto,
@@ -31,5 +32,9 @@ export class StorageClient {
         data,
       ),
     );
+  }
+
+  deleteFile(data: DeleteFileDto): void {
+    this.client.emit<void, DeleteFileDto>(StorageMessage.DELETE_FILE, data);
   }
 }
