@@ -18,7 +18,7 @@ async function bootstrap() {
 
   const configService = appContext.get(ConfigService);
 
-  const { HOST, PORT } = configService.API_GATEWAY;
+  const { HOST, PORT, CLIENT_ORIGIN } = configService.API_GATEWAY;
 
   const app = await NestFactory.create(ApiGatewayModule);
 
@@ -32,6 +32,12 @@ async function bootstrap() {
   app.useGlobalFilters(new RpcToHttpExceptionFilter());
 
   app.use(cookieParser());
+
+  app.enableCors({
+    origin: CLIENT_ORIGIN,
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  });
 
   setupDocs(app);
 

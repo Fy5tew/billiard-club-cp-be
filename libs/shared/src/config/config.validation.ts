@@ -54,6 +54,7 @@ const rabbitmqConfigSchema = z.object({
 const apiGatewayConfigSchema = z.object({
   HOST: z.string(),
   PORT: z.coerce.number(),
+  CLIENT_ORIGIN: z.string(),
 });
 
 const identityConfigSchema = z.object({

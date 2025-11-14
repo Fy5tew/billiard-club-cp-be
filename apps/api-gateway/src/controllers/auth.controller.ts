@@ -26,7 +26,10 @@ import type { RequestWithUserId } from '@app/shared/types/auth.types';
 import { JWT_REFRESH_TOKEN_COOKIE } from '../auth/auth.constants';
 import { PublicRoute } from '../auth/auth.decorators';
 import { JwtRefreshGuard } from '../auth/jwt-refresh.guard';
-import { AuthRoute } from '../constants/auth.constants';
+import {
+  AuthRoute,
+  JWT_REFRESH_TOKEN_COOKIE_OPTIONS,
+} from '../constants/auth.constants';
 
 @ApiTags('Auth')
 @Controller(AuthRoute.BASE)
@@ -127,15 +130,42 @@ export class AuthController {
     return { accessToken };
   }
 
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: 'Logout from the system',
+    description: 'Deletes the refresh token from cookies',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User logged out successfully',
+    type: AccessTokenDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'The refresh token is invalid or expired',
+  })
+  @PublicRoute()
+  @UseGuards(JwtRefreshGuard)
+  @Get(AuthRoute.LOGOUT)
+  logout(@Res({ passthrough: true }) response: Response): void {
+    AuthController.removeRefreshTokenCookie(response);
+  }
+
   private static setRefreshTokenCookie(
     response: Response,
     refreshToken: string,
   ): void {
-    response.cookie(JWT_REFRESH_TOKEN_COOKIE, refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      path: '/',
-    });
+    response.cookie(
+      JWT_REFRESH_TOKEN_COOKIE,
+      refreshToken,
+      JWT_REFRESH_TOKEN_COOKIE_OPTIONS,
+    );
+  }
+
+  private static removeRefreshTokenCookie(response: Response): void {
+    response.clearCookie(
+      JWT_REFRESH_TOKEN_COOKIE,
+      JWT_REFRESH_TOKEN_COOKIE_OPTIONS,
+    );
   }
 }
