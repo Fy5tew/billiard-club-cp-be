@@ -16,7 +16,15 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "migrations:generate": "tsx ./scripts/migrations.ts generate",
+    "migrations:show": "tsx ./scripts/migrations.ts show",
+    "migrations:run": "tsx ./scripts/migrations.ts run",
+    "migrations:revert": "tsx ./scripts/migrations.ts revert",
+    "docker:migrations:generate": "tsx ./scripts/migrations.ts generate --docker",
+    "docker:migrations:show": "tsx ./scripts/migrations.ts show --docker",
+    "docker:migrations:run": "tsx ./scripts/migrations.ts run --docker",
+    "docker:migrations:revert": "tsx ./scripts/migrations.ts revert --docker"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
@@ -84,6 +92,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },

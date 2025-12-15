@@ -8,19 +8,19 @@ export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id: UserId;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', unique: true })
   email: string;
 
   @Exclude()
-  @Column()
+  @Column({ type: 'varchar' })
   password: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   surname: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   photoFilename: string;
 }

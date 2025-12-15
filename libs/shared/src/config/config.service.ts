@@ -1,16 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import dotenv from 'dotenv';
-import nconf from 'nconf';
 
-import { NESTED_VALUE_SEPARATOR } from './config.constants';
-import { Config, configSchema } from './config.validation';
-
-dotenv.config();
-
-nconf.env({
-  separator: NESTED_VALUE_SEPARATOR,
-  parseValues: true,
-});
+import { Config } from './config.validation';
+import { loadConfig } from './load-config';
 
 @Injectable()
 export class ConfigService implements Config {
@@ -25,7 +16,6 @@ export class ConfigService implements Config {
   STORAGE: Config['STORAGE'];
 
   constructor() {
-    const config = configSchema.parse(nconf.get());
-    Object.assign(this, config);
+    Object.assign(this, loadConfig());
   }
 }

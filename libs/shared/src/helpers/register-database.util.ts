@@ -17,7 +17,6 @@ export const registerDatabase = () => {
         username: USER,
         password: PASSWORD,
         database: NAME,
-        synchronize: true,
         autoLoadEntities: true,
       };
     },
