@@ -57,7 +57,11 @@ const apiGatewayConfigSchema = z.object({
   CLIENT_ORIGIN: z.string(),
 });
 
-const identityConfigSchema = z.object({
+const identityServiceConfigSchema = z.object({
+  RMQ_QUEUE: z.string(),
+});
+
+const billiardTablesServiceConfigScheme = z.object({
   RMQ_QUEUE: z.string(),
 });
 
@@ -78,7 +82,8 @@ export const configSchema = z.object({
   RABBITMQ: rabbitmqConfigSchema,
   JWT: jwtConfigSchema,
   API_GATEWAY: apiGatewayConfigSchema,
-  IDENTITY: identityConfigSchema,
+  IDENTITY: identityServiceConfigSchema,
+  BILLIARD_TABLES: billiardTablesServiceConfigScheme,
   NOTIFICATION: notificationServiceConfigSchema,
   STORAGE: storageServiceConfigSchema,
 });

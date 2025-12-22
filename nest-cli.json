@@ -12,6 +12,15 @@
         "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
       }
     },
+    "billiard-tables": {
+      "type": "application",
+      "root": "apps/billiard-tables",
+      "entryFile": "main",
+      "sourceRoot": "apps/billiard-tables/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/billiard-tables/tsconfig.app.json"
+      }
+    },
     "identity": {
       "type": "application",
       "root": "apps/identity",

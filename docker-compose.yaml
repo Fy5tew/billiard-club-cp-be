@@ -145,6 +145,22 @@ services:
       postgres:
         condition: service_healthy
 
+  billiard-tables-service:
+    container_name: billiard-tables-service
+    build:
+      context: .
+      dockerfile: ./apps/billiard-tables/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   notification-service:
     container_name: notification-service
     build:

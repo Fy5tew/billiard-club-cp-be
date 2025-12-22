@@ -12,6 +12,7 @@ export class ConfigService implements Config {
   JWT: Config['JWT'];
   API_GATEWAY: Config['API_GATEWAY'];
   IDENTITY: Config['IDENTITY'];
+  BILLIARD_TABLES: Config['BILLIARD_TABLES'];
   NOTIFICATION: Config['NOTIFICATION'];
   STORAGE: Config['STORAGE'];
 
