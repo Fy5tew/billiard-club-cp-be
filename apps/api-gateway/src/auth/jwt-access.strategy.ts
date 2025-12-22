@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { ConfigService } from '@app/shared/config/config.service';
-import { UserDto } from '@app/shared/dtos/user.dto';
+import { UserDto, UserStatus } from '@app/shared/dtos/user.dto';
 import { AccessTokenPayload, TokenType } from '@app/shared/types/auth.types';
 
 import { JWT_ACCESS_STRATEGY } from './auth.constants';
@@ -22,9 +22,16 @@ export class JwtAccessStrategy extends PassportStrategy(
   }
 
   validate(payload: AccessTokenPayload): UserDto {
-    if (payload.tokenType !== TokenType.ACCESS) {
+    const { tokenType, user } = payload;
+
+    if (tokenType !== TokenType.ACCESS) {
       throw new UnauthorizedException('Invalid token type');
     }
-    return payload.user;
+
+    if (user.status !== UserStatus.Active) {
+      throw new UnauthorizedException('User is blocked');
+    }
+
+    return user;
   }
 }

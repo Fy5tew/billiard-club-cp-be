@@ -18,9 +18,10 @@ import {
 } from '@nestjs/swagger';
 
 import type { UserId } from '@app/shared/dtos/user.dto';
-import { UserDto, UpdateUserDto } from '@app/shared/dtos/user.dto';
+import { UserDto, UpdateUserDto, UserRole } from '@app/shared/dtos/user.dto';
 import { IdentityClient } from '@app/shared/services/identity/identity.client';
 
+import { RoleAccess } from '../auth/auth.decorators';
 import { UsersRoute } from '../constants/users.constants';
 
 @Controller(UsersRoute.BASE)
@@ -47,6 +48,7 @@ export class UsersController {
     status: HttpStatus.NOT_FOUND,
     description: 'User was not found',
   })
+  @RoleAccess(UserRole.User)
   @Get(UsersRoute.PROFILE)
   async getById(@Param('id') id: UserId): Promise<UserDto> {
     return this.identityClient.getById(id);
@@ -73,6 +75,7 @@ export class UsersController {
     status: HttpStatus.NOT_FOUND,
     description: 'User was not found',
   })
+  @RoleAccess(UserRole.User)
   @Put(UsersRoute.PROFILE)
   async updateById(
     @Param('id') id: UserId,
@@ -101,6 +104,7 @@ export class UsersController {
     status: HttpStatus.NOT_FOUND,
     description: 'User was not found',
   })
+  @RoleAccess(UserRole.User)
   @Post(UsersRoute.PHOTO)
   async updateProfileById(
     @Param('id') id: UserId,
@@ -133,6 +137,7 @@ export class UsersController {
     status: HttpStatus.NOT_FOUND,
     description: 'User was not found',
   })
+  @RoleAccess(UserRole.User)
   @Delete(UsersRoute.PROFILE)
   async deleteById(@Param('id') id: UserId): Promise<UserDto> {
     return this.identityClient.deleteById(id);

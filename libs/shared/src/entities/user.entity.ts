@@ -2,6 +2,7 @@ import { Exclude } from 'class-transformer';
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 import type { UserId } from '../dtos/user.dto';
+import { UserRole, UserStatus } from '../dtos/user.dto';
 
 @Entity('users')
 export class UserEntity {
@@ -23,4 +24,18 @@ export class UserEntity {
 
   @Column({ type: 'varchar', nullable: true })
   photoFilename: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.User,
+  })
+  role: UserRole;
+
+  @Column({
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.Pending,
+  })
+  status: UserStatus;
 }
