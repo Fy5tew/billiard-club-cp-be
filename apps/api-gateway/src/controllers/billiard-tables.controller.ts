@@ -40,7 +40,7 @@ import { BilliardTablesRoute } from '../constants/billiard-tables.constants';
 @ApiTags('Billiard Tables')
 @ApiBearerAuth()
 @Controller(BilliardTablesRoute.BASE)
-export class ApiGatewayBilliardTablesController {
+export class BilliardTablesController {
   constructor(private readonly billiardTablesClient: BilliardTablesClient) {}
 
   @ApiOperation({ summary: 'Create a new billiard table' })

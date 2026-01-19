@@ -11,6 +11,7 @@ import { StorageClient } from '@app/shared/services/storage/storage.client';
 import { JwtAccessStrategy } from './auth/jwt-access.strategy';
 import { JwtRefreshStrategy } from './auth/jwt-refresh.strategy';
 import { AuthController } from './controllers/auth.controller';
+import { BilliardTablesController } from './controllers/billiard-tables.controller';
 import { HomeController } from './controllers/home.controller';
 import { StorageController } from './controllers/storage.controller';
 import { UsersController } from './controllers/users.controller';
@@ -27,6 +28,7 @@ import { UsersController } from './controllers/users.controller';
     HomeController,
     AuthController,
     UsersController,
+    BilliardTablesController,
     StorageController,
   ],
   providers: [

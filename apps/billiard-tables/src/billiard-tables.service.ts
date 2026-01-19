@@ -19,10 +19,8 @@ import {
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
 } from '@app/shared/dtos/billiard-table.dto';
-import {
-  BilliardTableEntity,
-  BilliardTablePhotoEntity,
-} from '@app/shared/entities/billiard-table.entity';
+import { BilliardTablePhotoEntity } from '@app/shared/entities/billiard-table-photo.entity';
+import { BilliardTableEntity } from '@app/shared/entities/billiard-table.entity';
 import { CatchDatabaseError } from '@app/shared/helpers/catch-database-error.decorator';
 import { StorageClient } from '@app/shared/services/storage/storage.client';
 import { DatabaseErrorCode } from '@app/shared/types/database-error.types';

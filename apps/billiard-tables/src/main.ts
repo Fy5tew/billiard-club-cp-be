@@ -13,7 +13,7 @@ async function bootstrap() {
 
   const configService = appContext.get(ConfigService);
 
-  const { RMQ_QUEUE } = configService.IDENTITY;
+  const { RMQ_QUEUE } = configService.BILLIARD_TABLES;
   const { HOST, PORT, USER, PASSWORD } = configService.RABBITMQ;
 
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(

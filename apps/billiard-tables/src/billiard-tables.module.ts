@@ -2,10 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ConfigModule } from '@app/shared/config/config.module';
-import {
-  BilliardTableEntity,
-  BilliardTablePhotoEntity,
-} from '@app/shared/entities/billiard-table.entity';
+import { BilliardTablePhotoEntity } from '@app/shared/entities/billiard-table-photo.entity';
+import { BilliardTableEntity } from '@app/shared/entities/billiard-table.entity';
 import { registerClient } from '@app/shared/helpers/register-client.util';
 import { registerDatabase } from '@app/shared/helpers/register-database.util';
 import { Service } from '@app/shared/services/services.types';
@@ -21,7 +19,7 @@ import { BilliardTablesService } from './billiard-tables.service';
     TypeOrmModule.forFeature([BilliardTableEntity, BilliardTablePhotoEntity]),
     registerClient(Service.STORAGE),
   ],
-  controllers: [BilliardTablesController, StorageClient],
-  providers: [BilliardTablesService],
+  providers: [BilliardTablesService, StorageClient],
+  controllers: [BilliardTablesController],
 })
 export class BilliardTablesModule {}

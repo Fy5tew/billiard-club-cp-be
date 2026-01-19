@@ -2,10 +2,8 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 
 import { loadConfig } from '@app/shared/config/load-config';
-import {
-  BilliardTableEntity,
-  BilliardTablePhotoEntity,
-} from '@app/shared/entities/billiard-table.entity';
+import { BilliardTablePhotoEntity } from '@app/shared/entities/billiard-table-photo.entity';
+import { BilliardTableEntity } from '@app/shared/entities/billiard-table.entity';
 import { UserEntity } from '@app/shared/entities/user.entity';
 
 const config = loadConfig().DB;

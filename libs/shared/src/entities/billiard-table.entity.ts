@@ -1,36 +1,11 @@
-import {
-  Entity,
-  Column,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
+import { BilliardTablePhotoEntity } from './billiard-table-photo.entity';
 import {
   BilliardTableStatus,
   BilliardTableType,
 } from '../dtos/billiard-table.dto';
 import type { BilliardTableId } from '../dtos/billiard-table.dto';
-import type { BilliardTablePhotoId } from '../dtos/billiard-table.dto';
-
-@Entity({ name: 'billiard_table_photos' })
-export class BilliardTablePhotoEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: BilliardTablePhotoId;
-
-  @Column({ type: 'varchar', nullable: false })
-  billiardTableId: string;
-
-  @Column({ type: 'varchar', nullable: false })
-  photoFilename: string;
-
-  @ManyToOne(() => BilliardTableEntity, (table) => table.photos, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'billiard_table_id' })
-  billiardTable: BilliardTableEntity;
-}
 
 @Entity({ name: 'billiard_tables' })
 export class BilliardTableEntity {
