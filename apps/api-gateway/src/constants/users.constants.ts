@@ -1,5 +1,7 @@
 export enum UsersRoute {
   BASE = 'users',
-  PROFILE = ':id',
-  PHOTO = ':id/photo',
+  USER = ':id',
+  USER_PHOTO = ':id/photo',
+  CURRENT_USER = 'current',
+  CURRENT_USER_PHOTO = 'current/photo',
 }
