@@ -297,7 +297,7 @@ export class UsersController {
     description: 'User was not found',
   })
   @RoleAccess(UserRole.User)
-  @Delete(UsersRoute.CURRENT_USER_PHOTO)
+  @Delete(UsersRoute.USER_PHOTO)
   async deleteProfilePhotoById(@Param('id') id: UserId): Promise<UserDto> {
     return this.identityClient.deletePhotoById(id);
   }
@@ -326,5 +326,26 @@ export class UsersController {
   @Delete(UsersRoute.USER)
   async deleteById(@Param('id') id: UserId): Promise<UserDto> {
     return this.identityClient.deleteById(id);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Get all users successfully',
+    type: [UserDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  @RoleAccess(UserRole.Admin)
+  @Get()
+  async getUsers(): Promise<UserDto[]> {
+    return this.identityClient.getUsers();
   }
 }

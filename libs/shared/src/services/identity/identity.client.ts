@@ -73,4 +73,10 @@ export class IdentityClient {
       this.client.send<TokensDto, UserId>(IdentityMessage.REFRESH, userId),
     );
   }
+
+  async getUsers(): Promise<UserDto[]> {
+    return firstValueFrom(
+      this.client.send<UserDto[], object>(IdentityMessage.GET_USERS, {}),
+    );
+  }
 }

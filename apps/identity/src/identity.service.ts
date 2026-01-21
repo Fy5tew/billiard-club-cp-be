@@ -103,6 +103,12 @@ export class IdentityService {
     return this.generateTokens(await this.mapUserEntityToDto(user));
   }
 
+  async getUsers(): Promise<UserDto[]> {
+    const users = await this.users.find();
+
+    return Promise.all(users.map((user) => this.mapUserEntityToDto(user)));
+  }
+
   @CatchDatabaseError(
     DatabaseErrorCode.UNIQUE_VIOLATION,
     ({ args: [{ email }] }) => {

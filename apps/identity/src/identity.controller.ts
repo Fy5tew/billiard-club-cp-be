@@ -60,4 +60,9 @@ export class IdentityController {
   async refresh(@Payload() userId: UserId): Promise<TokensDto> {
     return this.identity.refresh(userId);
   }
+
+  @MessagePattern(IdentityMessage.GET_USERS)
+  async getUsers(): Promise<UserDto[]> {
+    return this.identity.getUsers();
+  }
 }

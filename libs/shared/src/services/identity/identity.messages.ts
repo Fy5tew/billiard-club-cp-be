@@ -7,4 +7,5 @@ export enum IdentityMessage {
   DELETE_PHOTO_BY_ID = 'delete_photo_by_id',
   GET_BY_ID = 'get_by_id',
   DELETE_BY_ID = 'delete_by_id',
+  GET_USERS = 'get_users',
 }
