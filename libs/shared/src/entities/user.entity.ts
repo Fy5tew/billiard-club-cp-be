@@ -23,7 +23,7 @@ export class UserEntity {
   surname: string;
 
   @Column({ type: 'varchar', nullable: true })
-  photoFilename: string;
+  photoFilename: string | null;
 
   @Column({
     type: 'enum',

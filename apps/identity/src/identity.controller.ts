@@ -36,6 +36,11 @@ export class IdentityController {
     return this.identity.updatePhotoById(id, data);
   }
 
+  @MessagePattern(IdentityMessage.DELETE_PHOTO_BY_ID)
+  async deletePhotoById(@Payload() id: UserId): Promise<UserDto> {
+    return this.identity.deletePhotoById(id);
+  }
+
   @MessagePattern(IdentityMessage.GET_BY_ID)
   async getById(@Payload() id: UserId): Promise<UserDto> {
     return this.identity.getById(id);

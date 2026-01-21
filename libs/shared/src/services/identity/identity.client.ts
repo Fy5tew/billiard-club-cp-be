@@ -44,6 +44,12 @@ export class IdentityClient {
     );
   }
 
+  async deletePhotoById(id: UserId): Promise<UserDto> {
+    return firstValueFrom(
+      this.client.send<UserDto, UserId>(IdentityMessage.DELETE_PHOTO_BY_ID, id),
+    );
+  }
+
   async getById(id: UserId): Promise<UserDto> {
     return firstValueFrom(
       this.client.send<UserDto, UserId>(IdentityMessage.GET_BY_ID, id),

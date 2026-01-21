@@ -54,10 +54,17 @@ export class IdentityService {
     return await this.mapUserEntityToDto(await this.updateEntityById(id, data));
   }
 
-  async updatePhotoById(id: UserId, data: UpdateUserPhotoDto) {
+  async updatePhotoById(
+    id: UserId,
+    data: UpdateUserPhotoDto,
+  ): Promise<UserDto> {
     return await this.mapUserEntityToDto(
       await this.updateEntityPhotoById(id, data),
     );
+  }
+
+  async deletePhotoById(id: UserId) {
+    return await this.mapUserEntityToDto(await this.deleteEntityPhotoById(id));
   }
 
   async getById(id: UserId): Promise<UserDto> {
@@ -150,6 +157,14 @@ export class IdentityService {
     }
 
     user.photoFilename = newProfileFilename;
+
+    return await this.users.save(user);
+  }
+
+  private async deleteEntityPhotoById(id: UserId): Promise<UserEntity> {
+    const user = await this.getEntityById(id);
+
+    user.photoFilename = null;
 
     return await this.users.save(user);
   }

@@ -1,4 +1,4 @@
-import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
+import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import {
   IsEmail,
@@ -70,6 +70,12 @@ export class CreateUserDto extends OmitType(UserDto, [
   password: string;
 }
 
-export class UpdateUserDto extends PickType(UserDto, ['name', 'surname']) {}
+export class UpdateUserDto extends PartialType(
+  PickType(UserDto, ['name', 'surname', 'role', 'status']),
+) {}
+
+export class UpdateUserProfileDto extends PartialType(
+  PickType(UpdateUserDto, ['name', 'surname']),
+) {}
 
 export class UpdateUserPhotoDto extends OmitType(UploadFileDto, ['bucket']) {}

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,7 +10,9 @@ import {
   Put,
   Req,
   UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -19,7 +22,12 @@ import {
 } from '@nestjs/swagger';
 
 import type { UserId } from '@app/shared/dtos/user.dto';
-import { UserDto, UpdateUserDto, UserRole } from '@app/shared/dtos/user.dto';
+import {
+  UserDto,
+  UpdateUserDto,
+  UpdateUserProfileDto,
+  UserRole,
+} from '@app/shared/dtos/user.dto';
 import { IdentityClient } from '@app/shared/services/identity/identity.client';
 import type { RequestWithUser } from '@app/shared/types/auth.types';
 
@@ -32,7 +40,6 @@ export class UsersController {
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user info' })
-  @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Get user info successfuly',
@@ -58,8 +65,7 @@ export class UsersController {
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update current user info' })
-  @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiBody({ description: 'User data to update', type: UpdateUserDto })
+  @ApiBody({ description: 'User data to update', type: UpdateUserProfileDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Updated user info successfully',
@@ -81,14 +87,13 @@ export class UsersController {
   @Put(UsersRoute.CURRENT_USER)
   async updateCurrent(
     @Req() { user }: RequestWithUser,
-    @Body() data: UpdateUserDto,
+    @Body() data: UpdateUserProfileDto,
   ): Promise<UserDto> {
     return this.identityClient.updateById(user.id, data);
   }
 
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update user profile photo' })
-  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiOperation({ summary: 'Update current user profile photo' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Updated user profile photo successfully',
@@ -107,11 +112,18 @@ export class UsersController {
     description: 'User was not found',
   })
   @RoleAccess(UserRole.User)
+  @UseInterceptors(FileInterceptor('file'))
   @Post(UsersRoute.CURRENT_USER_PHOTO)
   async updateCurrentPhoto(
     @Req() { user }: RequestWithUser,
-    @UploadedFile() { filename, buffer, mimetype }: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<UserDto> {
+    if (!file) {
+      throw new BadRequestException('File not found in request');
+    }
+
+    const { filename, buffer, mimetype } = file;
+
     return this.identityClient.updatePhotoById(user.id, {
       filename,
       buffer,
@@ -120,8 +132,32 @@ export class UsersController {
   }
 
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete user' })
-  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiOperation({ summary: 'Delete current user profile photo' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Deleted user profile photo successfully',
+    type: UserDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User was not found',
+  })
+  @RoleAccess(UserRole.User)
+  @Delete(UsersRoute.CURRENT_USER_PHOTO)
+  async deleteCurrentPhoto(@Req() { user }: RequestWithUser): Promise<UserDto> {
+    return this.identityClient.deletePhotoById(user.id);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete current user' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Deleted user successfully',
@@ -222,16 +258,48 @@ export class UsersController {
     description: 'User was not found',
   })
   @RoleAccess(UserRole.Admin)
+  @UseInterceptors(FileInterceptor('file'))
   @Post(UsersRoute.USER_PHOTO)
-  async updateProfileById(
+  async updateProfilePhotoById(
     @Param('id') id: UserId,
-    @UploadedFile() { filename, buffer, mimetype }: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<UserDto> {
+    if (!file) {
+      throw new BadRequestException('File not found in request');
+    }
+
+    const { filename, buffer, mimetype } = file;
+
     return this.identityClient.updatePhotoById(id, {
       filename,
       buffer,
       mimeType: mimetype,
     });
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete user profile photo' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Deleted user profile photo successfully',
+    type: UserDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User was not found',
+  })
+  @RoleAccess(UserRole.User)
+  @Delete(UsersRoute.CURRENT_USER_PHOTO)
+  async deleteProfilePhotoById(@Param('id') id: UserId): Promise<UserDto> {
+    return this.identityClient.deletePhotoById(id);
   }
 
   @ApiBearerAuth()
