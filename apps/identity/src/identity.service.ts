@@ -20,7 +20,7 @@ import type {
   UpdateUserPhotoDto,
   UserId,
 } from '@app/shared/dtos/user.dto';
-import { UserDto } from '@app/shared/dtos/user.dto';
+import { UserDto, UserStatus } from '@app/shared/dtos/user.dto';
 import { UserEntity } from '@app/shared/entities/user.entity';
 import { CatchDatabaseError } from '@app/shared/helpers/catch-database-error.decorator';
 import { NotificationClient } from '@app/shared/services/notification/notification.client';
@@ -87,6 +87,13 @@ export class IdentityService {
         throw new UnauthorizedException('Invalid creadentials');
       }
 
+      switch (user.status) {
+        case UserStatus.Pending:
+          throw new UnauthorizedException('Invalid creadentials');
+        case UserStatus.Blocked:
+          throw new UnauthorizedException('User is blocked');
+      }
+
       return this.generateTokens(await this.mapUserEntityToDto(user));
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -99,6 +106,13 @@ export class IdentityService {
 
   async refresh(userId: UserId): Promise<TokensDto> {
     const user = await this.getEntityById(userId);
+
+    switch (user.status) {
+      case UserStatus.Pending:
+        throw new UnauthorizedException('Invalid creadentials');
+      case UserStatus.Blocked:
+        throw new UnauthorizedException('User is blocked');
+    }
 
     return this.generateTokens(await this.mapUserEntityToDto(user));
   }
