@@ -74,6 +74,12 @@ export class IdentityClient {
     );
   }
 
+  async activate(userId: UserId): Promise<null> {
+    return firstValueFrom(
+      this.client.send<null, UserId>(IdentityMessage.ACTIVATE, userId),
+    );
+  }
+
   async getUsers(): Promise<UserDto[]> {
     return firstValueFrom(
       this.client.send<UserDto[], object>(IdentityMessage.GET_USERS, {}),

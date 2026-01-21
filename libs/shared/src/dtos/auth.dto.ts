@@ -12,3 +12,8 @@ export class AccessTokenDto {
 export class TokensDto extends AccessTokenDto {
   refreshToken: string;
 }
+
+export class ActivationTokenDto {
+  @ApiProperty()
+  activationToken: string;
+}

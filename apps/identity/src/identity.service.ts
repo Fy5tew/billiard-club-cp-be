@@ -14,6 +14,7 @@ import { v4 as uuid } from 'uuid';
 
 import { ConfigService } from '@app/shared/config/config.service';
 import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
+import { EmailContentType } from '@app/shared/dtos/notification.dto';
 import type {
   CreateUserDto,
   UpdateUserDto,
@@ -27,12 +28,17 @@ import { NotificationClient } from '@app/shared/services/notification/notificati
 import { StorageClient } from '@app/shared/services/storage/storage.client';
 import {
   AccessTokenPayload,
+  ActivationTokenPayload,
   RefreshTokenPayload,
   TokenType,
 } from '@app/shared/types/auth.types';
 import { DatabaseErrorCode } from '@app/shared/types/database-error.types';
 
-import { BUCKET_NAME } from './identity.constants';
+import {
+  ACTIVATION_MESSAGE,
+  ACTIVATION_SUBJECT,
+  BUCKET_NAME,
+} from './identity.constants';
 import { getUserProfilePhotoPath } from './identity.utils';
 
 @Injectable()
@@ -47,7 +53,9 @@ export class IdentityService {
   ) {}
 
   async create(data: CreateUserDto): Promise<UserDto> {
-    return await this.mapUserEntityToDto(await this.createEntity(data));
+    const user = await this.mapUserEntityToDto(await this.createEntity(data));
+    void this.sendActivationEmail(user);
+    return user;
   }
 
   async updateById(id: UserId, data: UpdateUserDto): Promise<UserDto> {
@@ -117,6 +125,21 @@ export class IdentityService {
     return this.generateTokens(await this.mapUserEntityToDto(user));
   }
 
+  async activate(userId: UserId): Promise<null> {
+    const user = await this.getEntityById(userId);
+
+    switch (user.status) {
+      case UserStatus.Pending:
+        user.status = UserStatus.Active;
+        await this.users.save(user);
+        break;
+      case UserStatus.Blocked:
+        throw new UnauthorizedException('User is blocked');
+    }
+
+    return null;
+  }
+
   async getUsers(): Promise<UserDto[]> {
     const users = await this.users.find();
 
@@ -138,7 +161,6 @@ export class IdentityService {
       password: await this.hashPassword(password),
     });
     const newUser = await this.users.save(user);
-    this.sendWelcomeEmail(await this.mapUserEntityToDto(user));
     return newUser;
   }
 
@@ -285,11 +307,29 @@ export class IdentityService {
     );
   }
 
-  private sendWelcomeEmail({ email }: UserDto) {
+  private async generateActivationToken({ id }: UserDto): Promise<string> {
+    const { ACTIVATION_EXPIRES } = this.config.JWT;
+
+    return await this.jwtService.signAsync<ActivationTokenPayload>(
+      {
+        tokenType: TokenType.ACTIVATION,
+        userId: id,
+      },
+      { expiresIn: ACTIVATION_EXPIRES },
+    );
+  }
+
+  private async sendActivationEmail(user: UserDto) {
+    const { ACTIVATION_URL } = this.config.IDENTITY;
+
+    const activationToken = await this.generateActivationToken(user);
+    const activationUrl = ACTIVATION_URL.replace('{{token}}', activationToken);
+
     this.notificationClient.sendEmail({
-      to: email,
-      subject: 'Welcome on board',
-      message: 'Hello, new client!',
+      to: user.email,
+      type: EmailContentType.HTML,
+      subject: ACTIVATION_SUBJECT,
+      message: ACTIVATION_MESSAGE.replace('{{link}}', activationUrl),
     });
   }
 }

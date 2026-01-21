@@ -17,6 +17,13 @@ const jwtConfigSchema = z.object({
         "REFRESH_EXPIRES should be valid time value ('1h', '30m', '7d', etc.)",
     },
   ),
+  ACTIVATION_EXPIRES: z.custom<StringValue>(
+    (val) => typeof val === 'string' && ms(val as StringValue) !== undefined,
+    {
+      message:
+        "REFRESH_EXPIRES should be valid time value ('1h', '30m', '7d', etc.)",
+    },
+  ),
 });
 
 const dbConfigSchema = z.object({
@@ -59,6 +66,7 @@ const apiGatewayConfigSchema = z.object({
 
 const identityServiceConfigSchema = z.object({
   RMQ_QUEUE: z.string(),
+  ACTIVATION_URL: z.string(),
 });
 
 const billiardTablesServiceConfigScheme = z.object({

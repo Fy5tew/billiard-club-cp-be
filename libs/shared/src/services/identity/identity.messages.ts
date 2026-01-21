@@ -1,6 +1,7 @@
 export enum IdentityMessage {
   LOGIN = 'login',
   REFRESH = 'refresh',
+  ACTIVATE = 'activate',
   REGISTER = 'register',
   UPDATE_BY_ID = 'update_by_id',
   UPDATE_PHOTO_BY_ID = 'update_photo_by_id',

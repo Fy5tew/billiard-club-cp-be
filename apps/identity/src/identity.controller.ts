@@ -22,6 +22,11 @@ export class IdentityController {
     return this.identity.create(data);
   }
 
+  @MessagePattern(IdentityMessage.ACTIVATE)
+  async activate(@Payload() id: UserId): Promise<null> {
+    return this.identity.activate(id);
+  }
+
   @MessagePattern(IdentityMessage.UPDATE_BY_ID)
   async updateById(
     @Payload() [id, data]: [UserId, UpdateUserDto],

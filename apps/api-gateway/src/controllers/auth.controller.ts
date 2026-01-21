@@ -7,8 +7,10 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import {
   ApiBody,
   ApiCookieAuth,
@@ -18,10 +20,18 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 
-import { AccessTokenDto, LoginDto } from '@app/shared/dtos/auth.dto';
+import {
+  AccessTokenDto,
+  ActivationTokenDto,
+  LoginDto,
+} from '@app/shared/dtos/auth.dto';
 import { CreateUserDto, UserDto } from '@app/shared/dtos/user.dto';
 import { IdentityClient } from '@app/shared/services/identity/identity.client';
-import type { RequestWithUserId } from '@app/shared/types/auth.types';
+import {
+  TokenType,
+  type ActivationTokenPayload,
+  type RequestWithUserId,
+} from '@app/shared/types/auth.types';
 
 import { JWT_REFRESH_TOKEN_COOKIE } from '../auth/auth.constants';
 import { PublicRoute } from '../auth/auth.decorators';
@@ -34,7 +44,10 @@ import {
 @ApiTags('Auth')
 @Controller(AuthRoute.BASE)
 export class AuthController {
-  constructor(private readonly identityClient: IdentityClient) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly identityClient: IdentityClient,
+  ) {}
 
   @ApiOperation({ summary: 'Register a new user' })
   @ApiBody({ description: 'New user data', type: CreateUserDto })
@@ -55,6 +68,40 @@ export class AuthController {
   @Post(AuthRoute.REGISTER)
   async register(@Body() data: CreateUserDto): Promise<UserDto> {
     return this.identityClient.register(data);
+  }
+
+  @ApiOperation({
+    summary: 'Activate user account',
+    description:
+      'Validates the activation token and changes user status to active',
+  })
+  @ApiBody({ description: 'Activation token', type: ActivationTokenDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Account activated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid or expired activation token',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User not found',
+  })
+  @PublicRoute()
+  @HttpCode(HttpStatus.OK)
+  @Post(AuthRoute.ACTIVATE)
+  async activate(@Body() data: ActivationTokenDto): Promise<null> {
+    const { tokenType, userId } =
+      this.jwtService.decode<ActivationTokenPayload | null>(
+        data.activationToken,
+      ) ?? {};
+
+    if (tokenType !== TokenType.ACTIVATION || !userId) {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    return this.identityClient.activate(userId);
   }
 
   @ApiOperation({

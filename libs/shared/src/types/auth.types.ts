@@ -5,6 +5,7 @@ import { UserDto, UserId } from '../dtos/user.dto';
 export enum TokenType {
   ACCESS = 'access',
   REFRESH = 'refresh',
+  ACTIVATION = 'activation',
 }
 
 export type AccessTokenPayload = {
@@ -14,6 +15,11 @@ export type AccessTokenPayload = {
 
 export type RefreshTokenPayload = {
   tokenType: TokenType.REFRESH;
+  userId: UserId;
+};
+
+export type ActivationTokenPayload = {
+  tokenType: TokenType.ACTIVATION;
   userId: UserId;
 };
 

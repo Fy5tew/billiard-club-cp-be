@@ -3,6 +3,7 @@ import { CookieOptions } from 'express';
 export enum AuthRoute {
   BASE = 'auth',
   REGISTER = 'register',
+  ACTIVATE = 'activate',
   LOGIN = 'login',
   REFRESH = 'refresh',
   LOGOUT = 'logout',
