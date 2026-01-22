@@ -161,6 +161,22 @@ services:
       postgres:
         condition: service_healthy
 
+  booking-service:
+    container_name: booking-service
+    build:
+      context: .
+      dockerfile: ./apps/booking/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   notification-service:
     container_name: notification-service
     build:

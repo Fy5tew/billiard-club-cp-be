@@ -13,6 +13,7 @@ export class ConfigService implements Config {
   API_GATEWAY: Config['API_GATEWAY'];
   IDENTITY: Config['IDENTITY'];
   BILLIARD_TABLES: Config['BILLIARD_TABLES'];
+  BOOKING: Config['BOOKING'];
   NOTIFICATION: Config['NOTIFICATION'];
   STORAGE: Config['STORAGE'];
 

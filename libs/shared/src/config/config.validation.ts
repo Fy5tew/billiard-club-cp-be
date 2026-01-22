@@ -69,7 +69,11 @@ const identityServiceConfigSchema = z.object({
   ACTIVATION_URL: z.string(),
 });
 
-const billiardTablesServiceConfigScheme = z.object({
+const billiardTablesServiceConfigSchema = z.object({
+  RMQ_QUEUE: z.string(),
+});
+
+const bookingServiceConfigSchema = z.object({
   RMQ_QUEUE: z.string(),
 });
 
@@ -91,7 +95,8 @@ export const configSchema = z.object({
   JWT: jwtConfigSchema,
   API_GATEWAY: apiGatewayConfigSchema,
   IDENTITY: identityServiceConfigSchema,
-  BILLIARD_TABLES: billiardTablesServiceConfigScheme,
+  BILLIARD_TABLES: billiardTablesServiceConfigSchema,
+  BOOKING: bookingServiceConfigSchema,
   NOTIFICATION: notificationServiceConfigSchema,
   STORAGE: storageServiceConfigSchema,
 });

@@ -21,6 +21,15 @@
         "tsConfigPath": "apps/billiard-tables/tsconfig.app.json"
       }
     },
+    "booking": {
+      "type": "application",
+      "root": "apps/booking",
+      "entryFile": "main",
+      "sourceRoot": "apps/booking/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/booking/tsconfig.app.json"
+      }
+    },
     "identity": {
       "type": "application",
       "root": "apps/identity",
