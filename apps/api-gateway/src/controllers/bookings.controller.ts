@@ -178,7 +178,7 @@ export class BookingsController {
   }
 
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Confirm booking (Manager)' })
+  @ApiOperation({ summary: 'Confirm booking' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: HttpStatus.OK, type: BookingDto })
   @RoleAccess(UserRole.Manager)
@@ -186,6 +186,18 @@ export class BookingsController {
   async confirm(@Param('id') id: BookingId): Promise<BookingDto> {
     return this.bookingClient.updateStatusById(id, {
       status: BookingStatus.Confirmed,
+    });
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reject booking' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: BookingDto })
+  @RoleAccess(UserRole.Manager)
+  @Post(BookingsRoute.REJECT_BOOKING)
+  async reject(@Param('id') id: BookingId): Promise<BookingDto> {
+    return this.bookingClient.updateStatusById(id, {
+      status: BookingStatus.Rejected,
     });
   }
 
