@@ -22,6 +22,7 @@ import {
 import type { BilliardTableId } from '@app/shared/dtos/billiard-table.dto';
 import {
   BookingDto,
+  BookingFullDto,
   type BookingId,
   BookingStatus,
   CreateBookingDto,
@@ -30,7 +31,9 @@ import {
   FreeSlotDto,
 } from '@app/shared/dtos/booking.dto';
 import { UserRole, type UserId } from '@app/shared/dtos/user.dto';
+import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billiard-tables.client';
 import { BookingClient } from '@app/shared/services/booking/booking.client';
+import { IdentityClient } from '@app/shared/services/identity/identity.client';
 import type { RequestWithUser } from '@app/shared/types/auth.types';
 
 import { RoleAccess } from '../auth/auth.decorators';
@@ -39,7 +42,11 @@ import { BookingsRoute } from '../constants/bookings.constants';
 @ApiTags('Bookings')
 @Controller(BookingsRoute.BASE)
 export class BookingsController {
-  constructor(private readonly bookingClient: BookingClient) {}
+  constructor(
+    private readonly identityClient: IdentityClient,
+    private readonly billiardTablesClient: BilliardTablesClient,
+    private readonly bookingClient: BookingClient,
+  ) {}
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new booking' })
@@ -92,48 +99,51 @@ export class BookingsController {
   })
   @RoleAccess(UserRole.User)
   @Get(BookingsRoute.MY)
-  async getMyBookings(@Req() { user }: RequestWithUser): Promise<BookingDto[]> {
-    return this.bookingClient.getByUserId(user.id);
+  async getMyBookings(
+    @Req() { user }: RequestWithUser,
+  ): Promise<BookingFullDto[]> {
+    const bookings = await this.bookingClient.getByUserId(user.id);
+    return this.mapToFullMany(bookings);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get booking by ID' })
+  @ApiResponse({ status: HttpStatus.OK, type: BookingFullDto })
+  @RoleAccess(UserRole.User)
+  @Get(BookingsRoute.BOOKING)
+  async getById(@Param('id') id: BookingId): Promise<BookingFullDto> {
+    const booking = await this.bookingClient.getById(id);
+    return this.mapToFull(booking);
   }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get bookings by user ID' })
   @ApiParam({ name: 'userId', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: [BookingDto] })
+  @ApiResponse({ status: HttpStatus.OK, type: [BookingFullDto] })
   @RoleAccess(UserRole.Manager)
   @Get(BookingsRoute.BOOKINGS_BY_USER)
-  async getByUserId(@Param('userId') userId: UserId): Promise<BookingDto[]> {
-    return this.bookingClient.getByUserId(userId);
+  async getByUserId(
+    @Param('userId') userId: UserId,
+  ): Promise<BookingFullDto[]> {
+    const bookings = await this.bookingClient.getByUserId(userId);
+    return this.mapToFullMany(bookings);
   }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get bookings by billiard table ID' })
   @ApiParam({ name: 'billiardTableId', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: [BookingDto] })
+  @ApiResponse({ status: HttpStatus.OK, type: [BookingFullDto] })
   @RoleAccess(UserRole.Manager)
   @Get(BookingsRoute.BOOKINGS_BY_BILLIARD_TABLE)
   async getByTableId(
     @Param('billiardTableId') tableId: BilliardTableId,
-  ): Promise<BookingDto[]> {
-    return this.bookingClient.getByBilliardTableId(tableId);
+  ): Promise<BookingFullDto[]> {
+    const bookings = await this.bookingClient.getByBilliardTableId(tableId);
+    return this.mapToFullMany(bookings);
   }
 
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get booking by ID' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: BookingDto })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Booking not found',
-  })
-  @RoleAccess(UserRole.User)
-  @Get(BookingsRoute.BOOKING)
-  async getById(@Param('id') id: BookingId): Promise<BookingDto> {
-    return this.bookingClient.getById(id);
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update status manually (Manager)' })
+  @ApiOperation({ summary: 'Update status manually' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ type: UpdateBookingStatusDto })
   @ApiResponse({ status: HttpStatus.OK, type: BookingDto })
@@ -201,12 +211,47 @@ export class BookingsController {
   }
 
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all bookings (Admin/Manager)' })
+  @ApiOperation({ summary: 'Get all bookings' })
   @ApiResponse({ status: HttpStatus.OK, type: [BookingDto] })
   @RoleAccess(UserRole.Manager)
   @Get()
-  async getAll(): Promise<BookingDto[]> {
-    return this.bookingClient.getBookings();
+  async getAll(): Promise<BookingFullDto[]> {
+    const bookings = await this.bookingClient.getBookings();
+    return this.mapToFullMany(bookings);
+  }
+
+  private async mapToFullMany(
+    bookings: BookingDto[],
+  ): Promise<BookingFullDto[]> {
+    return Promise.all(bookings.map((b) => this.mapToFull(b)));
+  }
+
+  private async mapToFull(booking: BookingDto): Promise<BookingFullDto> {
+    const { userId, billiardTableId } = booking;
+
+    const [user, billiardTable] = await Promise.all([
+      userId ? this.fetchSafe(() => this.identityClient.getById(userId)) : null,
+
+      billiardTableId
+        ? this.fetchSafe(() =>
+            this.billiardTablesClient.getById(billiardTableId),
+          )
+        : null,
+    ]);
+
+    return {
+      ...booking,
+      user,
+      billiardTable,
+    };
+  }
+
+  private async fetchSafe<T>(request: () => Promise<T>): Promise<T | null> {
+    try {
+      return await request();
+    } catch {
+      return null;
+    }
   }
 
   private async checkOwnership(
@@ -214,7 +259,6 @@ export class BookingsController {
     currentUserId: UserId,
   ): Promise<void> {
     const booking = await this.bookingClient.getById(bookingId);
-
     if (booking.userId !== currentUserId) {
       throw new ForbiddenException(
         'You do not have permission to modify this booking',
