@@ -5,12 +5,12 @@ import { firstValueFrom } from 'rxjs';
 import { BookingMessage } from './booking.messages';
 import type { BilliardTableId } from '../../dtos/billiard-table.dto';
 import {
+  BookedSlotDto,
   BookingDto,
   BookingId,
   CreateBookingDto,
+  GetBookedSlotsDto,
   UpdateBookingStatusDto,
-  GetFreeSlotsDto,
-  FreeSlotDto,
 } from '../../dtos/booking.dto';
 import type { UserId } from '../../dtos/user.dto';
 import { Service } from '../services.types';
@@ -40,13 +40,13 @@ export class BookingClient {
     );
   }
 
-  async getFreeSlotsByBilliardTableId(
+  async getBookedSlotsByBilliardTableId(
     tableId: BilliardTableId,
-    query: GetFreeSlotsDto,
-  ): Promise<FreeSlotDto[]> {
+    query: GetBookedSlotsDto,
+  ): Promise<BookedSlotDto[]> {
     return firstValueFrom(
-      this.client.send<FreeSlotDto[], [BilliardTableId, GetFreeSlotsDto]>(
-        BookingMessage.GET_FREE_SLOTS_BY_BILLIARD_TABLE,
+      this.client.send<BookedSlotDto[], [BilliardTableId, GetBookedSlotsDto]>(
+        BookingMessage.GET_BOOKED_SLOTS_BY_BILLIARD_TABLE,
         [tableId, query],
       ),
     );

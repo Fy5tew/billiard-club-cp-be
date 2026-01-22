@@ -6,10 +6,12 @@ import {
   BookingDto,
   CreateBookingDto,
   UpdateBookingStatusDto,
-  GetFreeSlotsDto,
-  FreeSlotDto,
 } from '@app/shared/dtos/booking.dto';
-import type { BookingId } from '@app/shared/dtos/booking.dto';
+import type {
+  BookedSlotDto,
+  BookingId,
+  GetBookedSlotsDto,
+} from '@app/shared/dtos/booking.dto';
 import type { UserId } from '@app/shared/dtos/user.dto';
 import { BookingMessage } from '@app/shared/services/booking/booking.messages';
 
@@ -33,11 +35,11 @@ export class BookingController {
     return await this.bookingService.updateStatusById(id, data);
   }
 
-  @MessagePattern(BookingMessage.GET_FREE_SLOTS_BY_BILLIARD_TABLE)
-  async getFreeSlotsByBilliardTableId(
-    @Payload() [tableId, query]: [BilliardTableId, GetFreeSlotsDto],
-  ): Promise<FreeSlotDto[]> {
-    return await this.bookingService.getFreeSlotsByBilliardTableId(
+  @MessagePattern(BookingMessage.GET_BOOKED_SLOTS_BY_BILLIARD_TABLE)
+  async getBookedSlotsByBilliardTableId(
+    @Payload() [tableId, query]: [BilliardTableId, GetBookedSlotsDto],
+  ): Promise<BookedSlotDto[]> {
+    return await this.bookingService.getBookedSlotsByBilliardTableId(
       tableId,
       query,
     );

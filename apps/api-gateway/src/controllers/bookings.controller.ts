@@ -27,8 +27,8 @@ import {
   BookingStatus,
   CreateBookingDto,
   UpdateBookingStatusDto,
-  GetFreeSlotsDto,
-  FreeSlotDto,
+  GetBookedSlotsDto,
+  BookedSlotDto,
 } from '@app/shared/dtos/booking.dto';
 import { UserRole, type UserId } from '@app/shared/dtos/user.dto';
 import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billiard-tables.client';
@@ -74,20 +74,20 @@ export class BookingsController {
   }
 
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get free slots for billiard table' })
+  @ApiOperation({ summary: 'Get booked slots for billiard table' })
   @ApiParam({ name: 'billiardTableId', type: 'string', format: 'uuid' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Free slots list',
-    type: [FreeSlotDto],
+    type: [BookedSlotDto],
   })
   @RoleAccess(UserRole.User)
-  @Get(BookingsRoute.FREE_SLOTS_FOR_BILLIARD_TABLE)
-  async getFreeSlots(
+  @Get(BookingsRoute.BOOKED_SLOTS_FOR_BILLIARD_TABLE)
+  async getBookedSlots(
     @Param('billiardTableId') tableId: BilliardTableId,
-    @Query() query: GetFreeSlotsDto,
-  ): Promise<FreeSlotDto[]> {
-    return this.bookingClient.getFreeSlotsByBilliardTableId(tableId, query);
+    @Query() query: GetBookedSlotsDto,
+  ): Promise<BookedSlotDto[]> {
+    return this.bookingClient.getBookedSlotsByBilliardTableId(tableId, query);
   }
 
   @ApiBearerAuth()

@@ -43,11 +43,13 @@ export class BookingDto {
   @ApiProperty({ example: '2024-05-20T14:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   startTime: Date;
 
   @ApiProperty({ example: '2024-05-20T16:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   endTime: Date;
 
   @ApiProperty({ example: 1200.5 })
@@ -58,11 +60,13 @@ export class BookingDto {
   @ApiProperty({ example: '2026-01-22T10:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   createdAt: Date;
 
   @ApiProperty({ example: '2026-01-22T10:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   updatedAt: Date;
 }
 
@@ -92,11 +96,13 @@ export class BookingFullDto {
   @ApiProperty({ example: '2026-05-20T14:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   startTime: Date;
 
   @ApiProperty({ example: '2026-05-20T16:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   endTime: Date;
 
   @ApiProperty({ example: 1200.5 })
@@ -107,11 +113,13 @@ export class BookingFullDto {
   @ApiProperty({ example: '2026-01-22T10:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   createdAt: Date;
 
   @ApiProperty({ example: '2026-01-22T10:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   updatedAt: Date;
 }
 
@@ -123,11 +131,13 @@ export class CreateBookingDto {
   @ApiProperty({ example: '2024-05-20T14:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   startTime: Date;
 
   @ApiProperty({ example: '2024-05-20T16:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   endTime: Date;
 }
 
@@ -138,19 +148,21 @@ export class UpdateBookingStatusDto {
   status: BookingStatus;
 }
 
-export class GetFreeSlotsDto {
+export class GetBookedSlotsDto {
   @ApiProperty({ example: '2024-05-20T16:00:00Z' })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   date: Date;
 }
 
-export class FreeSlotDto {
+export class BookedSlotDto {
   @ApiProperty({
     example: '2026-01-21T14:00:00.000Z',
   })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   start: Date;
 
   @ApiProperty({
@@ -158,5 +170,6 @@ export class FreeSlotDto {
   })
   @Expose()
   @IsDate()
+  @Type(() => Date)
   end: Date;
 }

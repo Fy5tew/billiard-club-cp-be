@@ -22,8 +22,8 @@ import {
   BookingId,
   CreateBookingDto,
   UpdateBookingStatusDto,
-  GetFreeSlotsDto,
-  FreeSlotDto,
+  GetBookedSlotsDto,
+  BookedSlotDto,
 } from '@app/shared/dtos/booking.dto';
 import type { UserId } from '@app/shared/dtos/user.dto';
 import { BookingEntity } from '@app/shared/entities/booking.entity';
@@ -94,10 +94,10 @@ export class BookingService {
     return this.mapEntityToDto(await this.bookings.save(booking));
   }
 
-  async getFreeSlotsByBilliardTableId(
+  async getBookedSlotsByBilliardTableId(
     tableId: BilliardTableId,
-    { date }: GetFreeSlotsDto,
-  ): Promise<FreeSlotDto[]> {
+    { date }: GetBookedSlotsDto,
+  ): Promise<BookedSlotDto[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
 
