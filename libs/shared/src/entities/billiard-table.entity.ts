@@ -30,7 +30,7 @@ export class BilliardTableEntity {
   @Column({
     type: 'enum',
     enum: BilliardTableStatus,
-    default: BilliardTableStatus.Available,
+    default: BilliardTableStatus.Maintenance,
   })
   status: BilliardTableStatus;
 

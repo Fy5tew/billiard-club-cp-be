@@ -28,11 +28,11 @@ export class BilliardTablesClient {
     );
   }
 
-  async getAll(): Promise<BilliardTableDto[]> {
+  async getTables(): Promise<BilliardTableDto[]> {
     return firstValueFrom(
-      this.client.send<BilliardTableDto[], void>(
-        BilliardTablesMessage.GET_ALL,
-        undefined,
+      this.client.send<BilliardTableDto[], object>(
+        BilliardTablesMessage.GET_TABLES,
+        {},
       ),
     );
   }

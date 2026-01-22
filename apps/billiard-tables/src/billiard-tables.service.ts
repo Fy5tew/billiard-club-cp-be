@@ -73,7 +73,7 @@ export class BilliardTablesService {
     return await this.mapTableEntityToDto(await this.getEntityById(id));
   }
 
-  async getAll(): Promise<BilliardTableDto[]> {
+  async getTables(): Promise<BilliardTableDto[]> {
     const tables = await this.tables.find({ relations: ['photos'] });
     return Promise.all(tables.map((table) => this.mapTableEntityToDto(table)));
   }

@@ -1,4 +1,4 @@
-import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
+import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import {
   IsEnum,
@@ -93,13 +93,19 @@ export class CreateBilliardTableDto extends OmitType(BilliardTableDto, [
   photoFilenames?: string[];
 }
 
-export class UpdateBilliardTableDto extends PickType(BilliardTableDto, [
-  'title',
-  'description',
-  'hourlyPrice',
-  'type',
-  'status',
-]) {}
+export class UpdateBilliardTableDto extends PartialType(
+  PickType(BilliardTableDto, [
+    'title',
+    'description',
+    'hourlyPrice',
+    'type',
+    'status',
+  ]),
+) {}
+
+export class UpdateBilliardTableStatusDto extends PartialType(
+  PickType(UpdateBilliardTableDto, ['status']),
+) {}
 
 export class CreateBilliardTablePhotoDto extends OmitType(UploadFileDto, [
   'bucket',

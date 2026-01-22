@@ -26,9 +26,9 @@ export class BilliardTablesController {
     return this.billiardTablesService.create(data);
   }
 
-  @MessagePattern(BilliardTablesMessage.GET_ALL)
-  async getAll(): Promise<BilliardTableDto[]> {
-    return this.billiardTablesService.getAll();
+  @MessagePattern(BilliardTablesMessage.GET_TABLES)
+  async getTables(): Promise<BilliardTableDto[]> {
+    return this.billiardTablesService.getTables();
   }
 
   @MessagePattern(BilliardTablesMessage.GET_BY_ID)

@@ -20,7 +20,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiResponse,
-  ApiTags,
 } from '@nestjs/swagger';
 
 import type { BilliardTableId } from '@app/shared/dtos/billiard-table.dto';
@@ -29,7 +28,7 @@ import {
   CreateBilliardTableDto,
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
-  BilliardTableStatus,
+  UpdateBilliardTableStatusDto,
 } from '@app/shared/dtos/billiard-table.dto';
 import { UserRole } from '@app/shared/dtos/user.dto';
 import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billiard-tables.client';
@@ -37,12 +36,11 @@ import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billi
 import { PublicRoute, RoleAccess } from '../auth/auth.decorators';
 import { BilliardTablesRoute } from '../constants/billiard-tables.constants';
 
-@ApiTags('Billiard Tables')
-@ApiBearerAuth()
 @Controller(BilliardTablesRoute.BASE)
 export class BilliardTablesController {
   constructor(private readonly billiardTablesClient: BilliardTablesClient) {}
 
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new billiard table' })
   @ApiBody({ description: 'Billiard table data', type: CreateBilliardTableDto })
   @ApiResponse({
@@ -66,7 +64,7 @@ export class BilliardTablesController {
     status: HttpStatus.CONFLICT,
     description: 'Billiard table with this title already exists',
   })
-  @RoleAccess(UserRole.Manager)
+  @RoleAccess(UserRole.Admin)
   @Post()
   async create(
     @Body() data: CreateBilliardTableDto,
@@ -84,9 +82,10 @@ export class BilliardTablesController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Access token not provided or expired',
   })
+  @PublicRoute()
   @Get()
-  async getAll(): Promise<BilliardTableDto[]> {
-    return this.billiardTablesClient.getAll();
+  async getTables(): Promise<BilliardTableDto[]> {
+    return this.billiardTablesClient.getTables();
   }
 
   @ApiOperation({ summary: 'Get billiard table by ID' })
@@ -116,6 +115,7 @@ export class BilliardTablesController {
     return this.billiardTablesClient.getById(id);
   }
 
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update billiard table' })
   @ApiParam({ name: 'id', description: 'Billiard table ID' })
   @ApiBody({
@@ -143,7 +143,7 @@ export class BilliardTablesController {
     status: HttpStatus.NOT_FOUND,
     description: 'Billiard table was not found',
   })
-  @RoleAccess(UserRole.Manager)
+  @RoleAccess(UserRole.Admin)
   @Put(BilliardTablesRoute.TABLE)
   async updateById(
     @Param('id', ParseUUIDPipe) id: BilliardTableId,
@@ -152,6 +152,44 @@ export class BilliardTablesController {
     return this.billiardTablesClient.updateById(id, data);
   }
 
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update billiard table status' })
+  @ApiParam({ name: 'id', description: 'Billiard table ID' })
+  @ApiBody({
+    description: 'Billiard table data to update',
+    type: UpdateBilliardTableStatusDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Updated billiard table successfully',
+    type: BilliardTableDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Billiard table was not found',
+  })
+  @RoleAccess(UserRole.Manager)
+  @Put(BilliardTablesRoute.TABLE_STATUS)
+  async updateStatusById(
+    @Param('id', ParseUUIDPipe) id: BilliardTableId,
+    @Body() data: UpdateBilliardTableStatusDto,
+  ): Promise<BilliardTableDto> {
+    return this.billiardTablesClient.updateById(id, data);
+  }
+
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Add photos to billiard table' })
   @ApiParam({ name: 'id', description: 'Billiard table ID' })
   @ApiConsumes('multipart/form-data')
@@ -191,7 +229,7 @@ export class BilliardTablesController {
     status: HttpStatus.NOT_FOUND,
     description: 'Billiard table was not found',
   })
-  @RoleAccess(UserRole.Manager)
+  @RoleAccess(UserRole.Admin)
   @UseInterceptors(FilesInterceptor('photos', 10))
   @Post(BilliardTablesRoute.PHOTOS)
   async addPhotos(
@@ -211,6 +249,7 @@ export class BilliardTablesController {
     return this.billiardTablesClient.addPhotos(id, photosData);
   }
 
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update photos of billiard table' })
   @ApiParam({ name: 'id', description: 'Billiard table ID' })
   @ApiBody({
@@ -238,7 +277,7 @@ export class BilliardTablesController {
     status: HttpStatus.NOT_FOUND,
     description: 'Billiard table was not found',
   })
-  @RoleAccess(UserRole.Manager)
+  @RoleAccess(UserRole.Admin)
   @Put(BilliardTablesRoute.PHOTOS)
   async updatePhotos(
     @Param('id', ParseUUIDPipe) id: BilliardTableId,
@@ -247,6 +286,7 @@ export class BilliardTablesController {
     return this.billiardTablesClient.updatePhotos(id, updateData);
   }
 
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete billiard table' })
   @ApiParam({ name: 'id', description: 'Billiard table ID' })
   @ApiResponse({
@@ -276,128 +316,5 @@ export class BilliardTablesController {
     @Param('id', ParseUUIDPipe) id: BilliardTableId,
   ): Promise<BilliardTableDto> {
     return this.billiardTablesClient.deleteById(id);
-  }
-
-  @ApiOperation({ summary: 'Block billiard table' })
-  @ApiParam({ name: 'id', description: 'Billiard table ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Blocked billiard table successfully',
-    type: BilliardTableDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Access token not provided or expired',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Insufficient permissions',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Billiard table was not found',
-  })
-  @RoleAccess(UserRole.Manager)
-  @Post(':id/block')
-  async blockTable(
-    @Param('id', ParseUUIDPipe) id: BilliardTableId,
-  ): Promise<BilliardTableDto> {
-    // @ts-expect-error temp
-    const updateData: UpdateBilliardTableDto = {
-      status: BilliardTableStatus.Blocked,
-    };
-    return this.billiardTablesClient.updateById(id, updateData);
-  }
-
-  @ApiOperation({ summary: 'Unblock billiard table' })
-  @ApiParam({ name: 'id', description: 'Billiard table ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Unblocked billiard table successfully',
-    type: BilliardTableDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Access token not provided or expired',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Insufficient permissions',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Billiard table was not found',
-  })
-  @RoleAccess(UserRole.Manager)
-  @Post(':id/unblock')
-  async unblockTable(
-    @Param('id', ParseUUIDPipe) id: BilliardTableId,
-  ): Promise<BilliardTableDto> {
-    // @ts-expect-error temp
-    const updateData: UpdateBilliardTableDto = {
-      status: BilliardTableStatus.Available,
-    };
-    return this.billiardTablesClient.updateById(id, updateData);
-  }
-
-  @ApiOperation({ summary: 'Set table for maintenance' })
-  @ApiParam({ name: 'id', description: 'Billiard table ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Set table for maintenance successfully',
-    type: BilliardTableDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Access token not provided or expired',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Insufficient permissions',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Billiard table was not found',
-  })
-  @RoleAccess(UserRole.Manager)
-  @Post(':id/maintenance')
-  async setTableForMaintenance(
-    @Param('id', ParseUUIDPipe) id: BilliardTableId,
-  ): Promise<BilliardTableDto> {
-    // @ts-expect-error temp
-    const updateData: UpdateBilliardTableDto = {
-      status: BilliardTableStatus.Maintenance,
-    };
-    return this.billiardTablesClient.updateById(id, updateData);
-  }
-
-  @ApiOperation({ summary: 'Get available tables' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Retrieved available billiard tables successfully',
-    type: [BilliardTableDto],
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Access token not provided or expired',
-  })
-  @Get('available')
-  async getAvailableTables(): Promise<BilliardTableDto[]> {
-    const allTables = await this.billiardTablesClient.getAll();
-    return allTables.filter(
-      (table) => table.status === BilliardTableStatus.Available,
-    );
   }
 }
