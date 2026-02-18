@@ -49,6 +49,26 @@ export class BookingsController {
   ) {}
 
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all bookings' })
+  @ApiResponse({ status: HttpStatus.OK, type: [BookingDto] })
+  @RoleAccess(UserRole.Manager)
+  @Get()
+  async getAll(): Promise<BookingFullDto[]> {
+    const bookings = await this.bookingClient.getBookings();
+    return this.mapToFullMany(bookings);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get upcoming bookings for current day' })
+  @ApiResponse({ status: HttpStatus.OK, type: [BookingDto] })
+  @RoleAccess(UserRole.Manager)
+  @Get(BookingsRoute.UPCOMING)
+  async getUpcoming(): Promise<BookingFullDto[]> {
+    const bookings = await this.bookingClient.getUpcomingBookings();
+    return this.mapToFullMany(bookings);
+  }
+
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new booking' })
   @ApiBody({ type: CreateBookingDto })
   @ApiResponse({
@@ -220,16 +240,6 @@ export class BookingsController {
     return this.bookingClient.updateStatusById(id, {
       status: BookingStatus.Paid,
     });
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all bookings' })
-  @ApiResponse({ status: HttpStatus.OK, type: [BookingDto] })
-  @RoleAccess(UserRole.Manager)
-  @Get()
-  async getAll(): Promise<BookingFullDto[]> {
-    const bookings = await this.bookingClient.getBookings();
-    return this.mapToFullMany(bookings);
   }
 
   private async mapToFullMany(

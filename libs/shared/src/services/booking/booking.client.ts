@@ -58,6 +58,15 @@ export class BookingClient {
     );
   }
 
+  async getUpcomingBookings(): Promise<BookingDto[]> {
+    return firstValueFrom(
+      this.client.send<BookingDto[], object>(
+        BookingMessage.GET_UPCOMING_BOOKINGS,
+        {},
+      ),
+    );
+  }
+
   async getById(id: BookingId): Promise<BookingDto> {
     return firstValueFrom(
       this.client.send<BookingDto, BookingId>(BookingMessage.GET_BY_ID, id),

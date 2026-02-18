@@ -6,14 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import {
-  Between,
-  In,
-  LessThanOrEqual,
-  MoreThanOrEqual,
-  Not,
-  Repository,
-} from 'typeorm';
+import { Between, In, LessThan, MoreThan, Not, Repository } from 'typeorm';
 
 import type { BilliardTableId } from '@app/shared/dtos/billiard-table.dto';
 import {
@@ -40,7 +33,14 @@ export class BookingService {
   ) {}
 
   async create(userId: UserId, data: CreateBookingDto): Promise<BookingDto> {
+    const currentDate = new Date();
+    currentDate.setHours(currentDate.getHours() + 3);
+
     const { billiardTableId, startTime, endTime } = data;
+
+    if (new Date(startTime) <= currentDate) {
+      throw new BadRequestException('Start time must be in the future');
+    }
 
     if (new Date(startTime) >= new Date(endTime)) {
       throw new BadRequestException('Start time must be before end time');
@@ -53,8 +53,8 @@ export class BookingService {
       where: {
         billiardTableId,
         status: Not(In([BookingStatus.Cancelled, BookingStatus.Rejected])),
-        startTime: LessThanOrEqual(new Date(endTime)),
-        endTime: MoreThanOrEqual(new Date(startTime)),
+        startTime: LessThan(new Date(endTime)),
+        endTime: MoreThan(new Date(startTime)),
       },
     });
 
@@ -120,7 +120,26 @@ export class BookingService {
   }
 
   async getBookings(): Promise<BookingDto[]> {
-    const entities = await this.bookings.find();
+    const entities = await this.bookings.find({
+      order: { createdAt: 'DESC' },
+    });
+    return entities.map((e) => this.mapEntityToDto(e));
+  }
+
+  async getUpcomingBookings(): Promise<BookingDto[]> {
+    const currentDate = new Date();
+    currentDate.setHours(currentDate.getHours() + 3);
+    const endOfCurrentDay = new Date(currentDate);
+    endOfCurrentDay.setHours(23, 59, 59, 999);
+
+    const entities = await this.bookings.find({
+      where: {
+        status: In([BookingStatus.Paid]),
+        startTime: Between(currentDate, endOfCurrentDay),
+      },
+      order: { startTime: 'ASC' },
+    });
+
     return entities.map((e) => this.mapEntityToDto(e));
   }
 
@@ -131,6 +150,7 @@ export class BookingService {
   async getByUserId(userId: UserId): Promise<BookingDto[]> {
     const entities = await this.bookings.find({
       where: { userId },
+      order: { createdAt: 'DESC' },
     });
     return entities.map((e) => this.mapEntityToDto(e));
   }
@@ -138,6 +158,7 @@ export class BookingService {
   async getByBilliardTableId(tableId: BilliardTableId): Promise<BookingDto[]> {
     const entities = await this.bookings.find({
       where: { billiardTableId: tableId },
+      order: { createdAt: 'DESC' },
     });
     return entities.map((e) => this.mapEntityToDto(e));
   }

@@ -1,5 +1,6 @@
 export enum BookingsRoute {
   BASE = 'bookings',
+  UPCOMING = 'upcoming',
   MY = 'my',
   BOOKED_SLOTS_FOR_BILLIARD_TABLE = 'slots/:billiardTableId',
   BOOKINGS_BY_USER = 'users/:userId',

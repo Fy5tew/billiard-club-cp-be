@@ -50,6 +50,11 @@ export class BookingController {
     return await this.bookingService.getBookings();
   }
 
+  @MessagePattern(BookingMessage.GET_UPCOMING_BOOKINGS)
+  async getUpcomingBookings(): Promise<BookingDto[]> {
+    return await this.bookingService.getUpcomingBookings();
+  }
+
   @MessagePattern(BookingMessage.GET_BY_ID)
   async getById(@Payload() id: BookingId): Promise<BookingDto> {
     return await this.bookingService.getById(id);
