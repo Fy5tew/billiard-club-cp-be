@@ -141,6 +141,28 @@ export class CreateBookingDto {
   endTime: Date;
 }
 
+export class CreateBookingManualDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002' })
+  @Expose()
+  billiardTableId: BilliardTableId;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002' })
+  @Expose()
+  userId: BilliardTableId;
+
+  @ApiProperty({ example: '2024-05-20T14:00:00Z' })
+  @Expose()
+  @IsDate()
+  @Type(() => Date)
+  startTime: Date;
+
+  @ApiProperty({ example: '2024-05-20T16:00:00Z' })
+  @Expose()
+  @IsDate()
+  @Type(() => Date)
+  endTime: Date;
+}
+
 export class UpdateBookingStatusDto {
   @ApiProperty({ enum: BookingStatus, enumName: 'BookingStatus' })
   @Expose()

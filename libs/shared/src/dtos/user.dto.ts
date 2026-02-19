@@ -59,6 +59,13 @@ export class UserDto {
   status: UserStatus;
 }
 
+export class SimplifiedUserDto extends PickType(UserDto, [
+  'id',
+  'name',
+  'surname',
+  'email',
+]) {}
+
 export class CreateUserDto extends OmitType(UserDto, [
   'id',
   'photoUrl',

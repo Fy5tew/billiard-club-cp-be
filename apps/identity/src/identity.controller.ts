@@ -4,6 +4,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
 import type {
   CreateUserDto,
+  SimplifiedUserDto,
   UpdateUserDto,
   UpdateUserPhotoDto,
   UserDto,
@@ -69,5 +70,10 @@ export class IdentityController {
   @MessagePattern(IdentityMessage.GET_USERS)
   async getUsers(): Promise<UserDto[]> {
     return this.identity.getUsers();
+  }
+
+  @MessagePattern(IdentityMessage.GET_USERS_SIMPLIFIED)
+  async getUsersSimplified(): Promise<SimplifiedUserDto[]> {
+    return this.identity.getUsersSimplified();
   }
 }

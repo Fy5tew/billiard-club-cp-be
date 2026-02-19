@@ -29,6 +29,7 @@ import {
   UpdateBookingStatusDto,
   GetBookedSlotsDto,
   BookedSlotDto,
+  CreateBookingManualDto,
 } from '@app/shared/dtos/booking.dto';
 import { UserRole, type UserId } from '@app/shared/dtos/user.dto';
 import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billiard-tables.client';
@@ -91,6 +92,34 @@ export class BookingsController {
     @Body() data: CreateBookingDto,
   ): Promise<BookingDto> {
     return this.bookingClient.create(user.id, data);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create new booking manual' })
+  @ApiBody({ type: CreateBookingDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Booking created',
+    type: BookingDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid time range',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Table already booked',
+  })
+  @RoleAccess(UserRole.Manager)
+  @Post(BookingsRoute.MANUAL)
+  async createManual(
+    @Body() { userId, ...data }: CreateBookingManualDto,
+  ): Promise<BookingDto> {
+    const booking = await this.bookingClient.create(userId, data);
+    void this.bookingClient.updateStatusById(booking.id, {
+      status: BookingStatus.Confirmed,
+    });
+    return booking;
   }
 
   @ApiBearerAuth()
@@ -218,6 +247,22 @@ export class BookingsController {
   async reject(@Param('id') id: BookingId): Promise<BookingDto> {
     return this.bookingClient.updateStatusById(id, {
       status: BookingStatus.Rejected,
+    });
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Pay for booking manual' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: BookingDto })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Not your booking',
+  })
+  @RoleAccess(UserRole.Manager)
+  @Post(BookingsRoute.PAY_BOOKING_MANUAL)
+  async payManual(@Param('id') id: BookingId): Promise<BookingDto> {
+    return this.bookingClient.updateStatusById(id, {
+      status: BookingStatus.Paid,
     });
   }
 

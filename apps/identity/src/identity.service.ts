@@ -17,11 +17,12 @@ import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
 import { EmailContentType } from '@app/shared/dtos/notification.dto';
 import type {
   CreateUserDto,
+  SimplifiedUserDto,
   UpdateUserDto,
   UpdateUserPhotoDto,
   UserId,
 } from '@app/shared/dtos/user.dto';
-import { UserDto, UserStatus } from '@app/shared/dtos/user.dto';
+import { UserDto, UserRole, UserStatus } from '@app/shared/dtos/user.dto';
 import { UserEntity } from '@app/shared/entities/user.entity';
 import { CatchDatabaseError } from '@app/shared/helpers/catch-database-error.decorator';
 import { NotificationClient } from '@app/shared/services/notification/notification.client';
@@ -142,6 +143,19 @@ export class IdentityService {
 
   async getUsers(): Promise<UserDto[]> {
     const users = await this.users.find();
+
+    return Promise.all(users.map((user) => this.mapUserEntityToDto(user)));
+  }
+
+  async getUsersSimplified(): Promise<SimplifiedUserDto[]> {
+    const users = await this.users
+      .createQueryBuilder('user')
+      .where('user.role IN (:...roles)', { roles: [UserRole.User] })
+      .andWhere('user.status IN (:...statuses)', {
+        statuses: [UserStatus.Active],
+      })
+      .orderBy("CONCAT(user.surname, ' ', user.name)", 'ASC')
+      .getMany();
 
     return Promise.all(users.map((user) => this.mapUserEntityToDto(user)));
   }

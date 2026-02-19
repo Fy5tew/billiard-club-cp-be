@@ -9,4 +9,5 @@ export enum IdentityMessage {
   GET_BY_ID = 'get_by_id',
   DELETE_BY_ID = 'delete_by_id',
   GET_USERS = 'get_users',
+  GET_USERS_SIMPLIFIED = 'get_users_simplified',
 }

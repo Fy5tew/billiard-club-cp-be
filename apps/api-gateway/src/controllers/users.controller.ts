@@ -21,7 +21,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 
-import type { UserId } from '@app/shared/dtos/user.dto';
+import type { SimplifiedUserDto, UserId } from '@app/shared/dtos/user.dto';
 import {
   UserDto,
   UpdateUserDto,
@@ -37,6 +37,48 @@ import { UsersRoute } from '../constants/users.constants';
 @Controller(UsersRoute.BASE)
 export class UsersController {
   constructor(private readonly identityClient: IdentityClient) {}
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Get all users successfully',
+    type: [UserDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  @RoleAccess(UserRole.Admin)
+  @Get()
+  async getUsers(): Promise<UserDto[]> {
+    return this.identityClient.getUsers();
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get active users simplified' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Get all users successfully',
+    type: [UserDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  @RoleAccess(UserRole.Manager)
+  @Get(UsersRoute.SIMPLIFIED)
+  async getUsersSimplified(): Promise<SimplifiedUserDto[]> {
+    return this.identityClient.getUsersSimplified();
+  }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user info' })
@@ -326,26 +368,5 @@ export class UsersController {
   @Delete(UsersRoute.USER)
   async deleteById(@Param('id') id: UserId): Promise<UserDto> {
     return this.identityClient.deleteById(id);
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all users' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Get all users successfully',
-    type: [UserDto],
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Access token not provided or expired',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Insufficient permissions',
-  })
-  @RoleAccess(UserRole.Admin)
-  @Get()
-  async getUsers(): Promise<UserDto[]> {
-    return this.identityClient.getUsers();
   }
 }

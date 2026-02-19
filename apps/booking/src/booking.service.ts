@@ -134,8 +134,8 @@ export class BookingService {
 
     const entities = await this.bookings.find({
       where: {
-        status: In([BookingStatus.Paid]),
-        startTime: Between(currentDate, endOfCurrentDay),
+        status: In([BookingStatus.Confirmed, BookingStatus.Paid]),
+        endTime: Between(currentDate, endOfCurrentDay),
       },
       order: { startTime: 'ASC' },
     });
