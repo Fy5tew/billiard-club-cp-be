@@ -10,6 +10,7 @@ import { RpcToHttpExceptionFilter } from '@app/shared/helpers/rpc-to-http-except
 
 import { ApiGatewayModule } from './api-gateway.module';
 import { JwtAccessAuthGuard } from './auth/jwt-access.guard';
+import { RoleAccessGuard } from './auth/role-access.guard';
 import { setupDocs } from './config/docs.config';
 
 async function bootstrap() {
@@ -22,11 +23,16 @@ async function bootstrap() {
 
   const app = await NestFactory.create(ApiGatewayModule);
 
-  app.useGlobalGuards(new JwtAccessAuthGuard(appContext.get(Reflector)));
+  const reflector = appContext.get(Reflector);
+
+  app.useGlobalGuards(
+    new JwtAccessAuthGuard(reflector),
+    new RoleAccessGuard(reflector),
+  );
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.useGlobalInterceptors(
-    new ClassSerializerInterceptor(appContext.get(Reflector)),
+    new ClassSerializerInterceptor(reflector),
     new RpcClientErrorInterceptor(),
   );
   app.useGlobalFilters(new RpcToHttpExceptionFilter());

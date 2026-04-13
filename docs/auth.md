@@ -83,14 +83,10 @@
   - `User = 0`
   - `Manager = 1`
   - `Admin = 2`
-
-## Important Limitation
-
-- `RoleAccessGuard` exists in code, but I did not find it registered:
-  - not in `apps/api-gateway/src/main.ts`
-  - not in `apps/api-gateway/src/api-gateway.module.ts`
-  - no `APP_GUARD` binding found
-- Runtime role enforcement wiring is therefore NOT FOUND IN CODEBASE.
+- `RoleAccessGuard` is registered globally in `apps/api-gateway/src/main.ts` after `JwtAccessAuthGuard`.
+- Important implementation detail:
+  - role presence must be checked with `role === undefined`
+  - `UserRole.User` equals `0`, so falsy checks like `if (!role)` break authorization for endpoints marked with `@RoleAccess(UserRole.User)`
 
 ## Config Inputs
 

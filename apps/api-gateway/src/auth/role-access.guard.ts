@@ -15,9 +15,9 @@ export class RoleAccessGuard implements CanActivate {
       ctx.getClass(),
     ]);
 
-    if (!role) return true;
+    if (role === undefined) return true;
 
     const { user } = ctx.switchToHttp().getRequest<RequestWithUser>();
-    return user.role >= role;
+    return user?.role !== undefined && user.role >= role;
   }
 }
