@@ -30,6 +30,7 @@ import {
 } from '@app/shared/dtos/user.dto';
 import { IdentityClient } from '@app/shared/services/identity/identity.client';
 import type { RequestWithUser } from '@app/shared/types/auth.types';
+import type { UploadedFilePayload } from '@app/shared/types/request.types';
 
 import { RoleAccess } from '../auth/auth.decorators';
 import { UsersRoute } from '../constants/users.constants';
@@ -158,7 +159,7 @@ export class UsersController {
   @Post(UsersRoute.CURRENT_USER_PHOTO)
   async updateCurrentPhoto(
     @Req() { user }: RequestWithUser,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: UploadedFilePayload,
   ): Promise<UserDto> {
     if (!file) {
       throw new BadRequestException('File not found in request');
@@ -304,7 +305,7 @@ export class UsersController {
   @Post(UsersRoute.USER_PHOTO)
   async updateProfilePhotoById(
     @Param('id') id: UserId,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: UploadedFilePayload,
   ): Promise<UserDto> {
     if (!file) {
       throw new BadRequestException('File not found in request');

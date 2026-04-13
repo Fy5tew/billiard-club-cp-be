@@ -82,6 +82,8 @@ For a new persisted concept:
 ## Conventions To Preserve
 
 - Use class-based DTOs with `class-validator`.
+- In `libs/shared/src/types/*`, prefer `type` aliases over `interface`.
+- Use `interface` only when declaration merging or extension semantics are intentionally needed.
 - Use shared enums for statuses and roles.
 - Use helper utilities for storage paths:
   - `apps/identity/src/identity.utils.ts`

@@ -32,6 +32,7 @@ import {
 } from '@app/shared/dtos/billiard-table.dto';
 import { UserRole } from '@app/shared/dtos/user.dto';
 import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billiard-tables.client';
+import type { UploadedFilePayload } from '@app/shared/types/request.types';
 
 import { PublicRoute, RoleAccess } from '../auth/auth.decorators';
 import { BilliardTablesRoute } from '../constants/billiard-tables.constants';
@@ -234,7 +235,7 @@ export class BilliardTablesController {
   @Post(BilliardTablesRoute.PHOTOS)
   async addPhotos(
     @Param('id', ParseUUIDPipe) id: BilliardTableId,
-    @UploadedFiles() photos: Express.Multer.File[],
+    @UploadedFiles() photos: UploadedFilePayload[],
   ): Promise<BilliardTableDto> {
     if (!photos || photos.length === 0) {
       throw new BadRequestException('At least one photo must be provided');
