@@ -1,0 +1,35 @@
+flowchart LR
+  Client[HTTP Client / Admin Panel]
+  APIGW[api-gateway]
+  ID[identity]
+  BT[billiard-tables]
+  BK[booking]
+  NT[notification]
+  ST[storage]
+  PG[(PostgreSQL)]
+  RMQ[(RabbitMQ)]
+  S3[(MinIO)]
+  SMTP[(SMTP / Maildev)]
+
+  Client -->|HTTP| APIGW
+  APIGW -->|RMQ RPC| RMQ
+  ID -->|RMQ RPC/Event| RMQ
+  BT -->|RMQ RPC/Event| RMQ
+  BK -->|RMQ RPC| RMQ
+  NT -->|RMQ Event consumer| RMQ
+  ST -->|RMQ RPC/Event consumer| RMQ
+  RMQ --> ID
+  RMQ --> BT
+  RMQ --> BK
+  RMQ --> NT
+  RMQ --> ST
+  ID --> PG
+  BT --> PG
+  BK --> PG
+  ID -->|storage client| ST
+  BT -->|storage client| ST
+  ID -->|notification client| NT
+  BK -->|identity client| ID
+  BK -->|table client| BT
+  ST --> S3
+  NT --> SMTP
