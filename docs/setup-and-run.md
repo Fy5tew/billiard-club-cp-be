@@ -14,6 +14,7 @@ Infrastructure defined in `docker-compose.yaml`:
   - `identity-service`
   - `billiard-tables-service`
   - `booking-service`
+  - `tournaments-service`
   - `notification-service`
   - `storage-service`
 - tooling container:
@@ -37,6 +38,7 @@ Required config groups found in code:
 - `IDENTITY`
 - `BILLIARD_TABLES`
 - `BOOKING`
+- `TOURNAMENTS`
 - `NOTIFICATION`
 - `STORAGE`
 
@@ -48,6 +50,7 @@ Example variable names from `.env`:
 - `JWT__SECRET`
 - `API_GATEWAY__PORT`
 - `IDENTITY__RMQ_QUEUE`
+- `TOURNAMENTS__RMQ_QUEUE`
 - `STORAGE__RMQ_QUEUE`
 
 ## Install
@@ -81,6 +84,7 @@ Important orchestration details from `docker-compose.yaml`:
   - `identity-service`
   - `billiard-tables-service`
   - `booking-service`
+  - `tournaments-service`
   - `migrations`
 - Maildev is required by `notification-service`.
 - MinIO is required by `storage-service`.

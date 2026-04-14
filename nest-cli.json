@@ -30,6 +30,15 @@
         "tsConfigPath": "apps/booking/tsconfig.app.json"
       }
     },
+    "tournaments": {
+      "type": "application",
+      "root": "apps/tournaments",
+      "entryFile": "main",
+      "sourceRoot": "apps/tournaments/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/tournaments/tsconfig.app.json"
+      }
+    },
     "identity": {
       "type": "application",
       "root": "apps/identity",

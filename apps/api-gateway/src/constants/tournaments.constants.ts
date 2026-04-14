@@ -1,0 +1,16 @@
+export enum TournamentsRoute {
+  BASE = 'tournaments',
+  MY_REGISTRATIONS = 'my/registrations',
+  REGISTRATION_CANCEL = 'registrations/:id/cancel',
+  REGISTRATION_APPROVE = 'registrations/:id/approve',
+  REGISTRATION_REJECT = 'registrations/:id/reject',
+  REGISTRATION_ATTENDED = 'registrations/:id/attended',
+  REGISTRATION_NO_SHOW = 'registrations/:id/no-show',
+  TOURNAMENT_REGISTRATIONS = ':id/registrations',
+  TOURNAMENT_REGISTER = ':id/register',
+  TOURNAMENT_PUBLISH = ':id/publish',
+  TOURNAMENT_CANCEL = ':id/cancel',
+  TOURNAMENT_START = ':id/start',
+  TOURNAMENT_COMPLETE = ':id/complete',
+  TOURNAMENT = ':id',
+}

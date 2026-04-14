@@ -177,6 +177,22 @@ services:
       postgres:
         condition: service_healthy
 
+  tournaments-service:
+    container_name: tournaments-service
+    build:
+      context: .
+      dockerfile: ./apps/tournaments/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   notification-service:
     container_name: notification-service
     build:

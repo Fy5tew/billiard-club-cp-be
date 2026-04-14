@@ -71,10 +71,27 @@ Migration sources:
 - Datasource: `apps/migrations/src/data-source.ts`
 - Script wrapper: `scripts/migrations.ts`
 - Package scripts:
-  - `npm run migrations:generate`
-  - `npm run migrations:show`
-  - `npm run migrations:run`
-  - `npm run migrations:revert`
+  - `pnpm migrations:generate <name>`
+  - `pnpm migrations:show`
+  - `pnpm migrations:run`
+  - `pnpm migrations:revert`
+
+Typical flow:
+
+1. Change TypeORM entities in `libs/shared/src/entities/*`.
+2. Generate a migration:
+   - `pnpm migrations:generate setup_tournaments`
+3. Review the generated file in `apps/migrations/src/migrations`.
+4. Apply migrations:
+   - `pnpm migrations:run`
+5. If needed, rollback the last migration:
+   - `pnpm migrations:revert`
+
+Notes:
+
+- The generator loads `apps/migrations/src/data-source.ts`, so `.env` must contain every required config group from `libs/shared/src/config/config.validation.ts`.
+- Extra TypeORM flags can be passed through the wrapper, for example:
+  - `pnpm migrations:generate setup_tournaments --dryrun`
 
 ## Non-Postgres Data Stores
 
