@@ -125,6 +125,22 @@ export class TournamentsService {
     return entities.map((entity) => this.mapTournamentToDto(entity));
   }
 
+  async getByIdPrivate(id: TournamentId): Promise<TournamentDto> {
+    return this.mapTournamentToDto(
+      await this.getTournamentEntityById(id, false),
+    );
+  }
+
+  async getListPrivate(): Promise<TournamentDto[]> {
+    const entities = await this.tournaments.find({
+      order: {
+        startAt: 'ASC',
+      },
+    });
+
+    return entities.map((entity) => this.mapTournamentToDto(entity));
+  }
+
   async publishById(id: TournamentId): Promise<TournamentDto> {
     const tournament = await this.getTournamentEntityById(id, false);
 

@@ -1,5 +1,7 @@
 export enum TournamentsRoute {
   BASE = 'tournaments',
+  PUBLIC = 'public',
+  PUBLIC_TOURNAMENT = 'public/:id',
   MY_REGISTRATIONS = 'my/registrations',
   REGISTRATION_CANCEL = 'registrations/:id/cancel',
   REGISTRATION_APPROVE = 'registrations/:id/approve',

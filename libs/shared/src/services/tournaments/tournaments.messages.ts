@@ -3,6 +3,8 @@ export enum TournamentsMessage {
   UPDATE_BY_ID = 'update_by_id',
   GET_BY_ID = 'get_by_id',
   GET_LIST = 'get_list',
+  GET_BY_ID_PRIVATE = 'get_by_id_private',
+  GET_LIST_PRIVATE = 'get_list_private',
   PUBLISH_BY_ID = 'publish_by_id',
   CANCEL_BY_ID = 'cancel_by_id',
   START_BY_ID = 'start_by_id',

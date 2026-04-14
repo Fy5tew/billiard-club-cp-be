@@ -40,6 +40,16 @@ export class TournamentsController {
     return this.tournamentsService.getList();
   }
 
+  @MessagePattern(TournamentsMessage.GET_BY_ID_PRIVATE)
+  async getByIdPrivate(@Payload() id: TournamentId): Promise<TournamentDto> {
+    return this.tournamentsService.getByIdPrivate(id);
+  }
+
+  @MessagePattern(TournamentsMessage.GET_LIST_PRIVATE)
+  async getListPrivate(): Promise<TournamentDto[]> {
+    return this.tournamentsService.getListPrivate();
+  }
+
   @MessagePattern(TournamentsMessage.PUBLISH_BY_ID)
   async publishById(@Payload() id: TournamentId): Promise<TournamentDto> {
     return this.tournamentsService.publishById(id);

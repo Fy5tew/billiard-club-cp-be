@@ -61,6 +61,24 @@ export class TournamentsClient {
     );
   }
 
+  async getByIdPrivate(id: TournamentId): Promise<TournamentDto> {
+    return firstValueFrom(
+      this.client.send<TournamentDto, TournamentId>(
+        TournamentsMessage.GET_BY_ID_PRIVATE,
+        id,
+      ),
+    );
+  }
+
+  async getListPrivate(): Promise<TournamentDto[]> {
+    return firstValueFrom(
+      this.client.send<TournamentDto[], object>(
+        TournamentsMessage.GET_LIST_PRIVATE,
+        {},
+      ),
+    );
+  }
+
   async publishById(id: TournamentId): Promise<TournamentDto> {
     return firstValueFrom(
       this.client.send<TournamentDto, TournamentId>(

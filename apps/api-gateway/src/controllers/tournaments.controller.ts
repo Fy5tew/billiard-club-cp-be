@@ -42,20 +42,41 @@ export class TournamentsController {
   @ApiOperation({ summary: 'Get tournaments list' })
   @ApiResponse({ status: HttpStatus.OK, type: [TournamentDto] })
   @PublicRoute()
+  @Get(TournamentsRoute.PUBLIC)
+  async getPublicList(): Promise<TournamentDto[]> {
+    return this.tournamentsClient.getList();
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get tournaments list including drafts' })
+  @ApiResponse({ status: HttpStatus.OK, type: [TournamentDto] })
+  @RoleAccess(UserRole.Manager)
   @Get()
   async getList(): Promise<TournamentDto[]> {
-    return this.tournamentsClient.getList();
+    return this.tournamentsClient.getListPrivate();
   }
 
   @ApiOperation({ summary: 'Get tournament by ID' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: HttpStatus.OK, type: TournamentDto })
   @PublicRoute()
+  @Get(TournamentsRoute.PUBLIC_TOURNAMENT)
+  async getPublicById(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+  ): Promise<TournamentDto> {
+    return this.tournamentsClient.getById(id);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get tournament by ID including drafts' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentDto })
+  @RoleAccess(UserRole.Manager)
   @Get(TournamentsRoute.TOURNAMENT)
   async getById(
     @Param('id', ParseUUIDPipe) id: TournamentId,
   ): Promise<TournamentDto> {
-    return this.tournamentsClient.getById(id);
+    return this.tournamentsClient.getByIdPrivate(id);
   }
 
   @ApiBearerAuth()
