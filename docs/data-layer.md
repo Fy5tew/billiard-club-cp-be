@@ -118,9 +118,6 @@ Notes:
 
 ## Important Observations
 
-- `BookingModule` registers extra entities and includes a TODO comment:
-  - `apps/booking/src/booking.module.ts`
-  - `// TODO: No need this entities`
 - Table default status differs historically:
   - migration `1766408198463` used `Available`
   - migration `1769038040380` changed it to `Maintenance`
@@ -130,7 +127,7 @@ Notes:
 
 ```text
 BookingService.create()
--> load table price from billiard-tables service
+-> use prepared booking context from api-gateway
 -> save BookingEntity in PostgreSQL
 -> map entity to BookingDto
 ```

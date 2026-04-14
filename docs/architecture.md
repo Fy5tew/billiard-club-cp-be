@@ -4,7 +4,7 @@
 
 - The repository is a NestJS monorepo (`nest-cli.json`) with:
   - one HTTP entry service: `apps/api-gateway`
-  - five RMQ-backed apps: `apps/identity`, `apps/billiard-tables`, `apps/booking`, `apps/notification`, `apps/storage`
+  - six RMQ-backed apps: `apps/identity`, `apps/billiard-tables`, `apps/booking`, `apps/tournaments`, `apps/notification`, `apps/storage`
   - one migration app: `apps/migrations`
   - one shared library: `libs/shared`
 - Transport split:
@@ -65,8 +65,18 @@
   - query booked slots and booking lists
 - Dependencies:
   - PostgreSQL (`BookingEntity`)
-  - `identity`
-  - `billiard-tables`
+  - no direct domain data dependencies on other business services
+
+### `tournaments`
+
+- Main file: `apps/tournaments/src/main.ts`
+- Module: `apps/tournaments/src/tournaments.module.ts`
+- Responsibility:
+  - tournament CRUD
+  - publish/cancel/start/complete tournament lifecycle
+  - tournament registration lifecycle
+- Dependencies:
+  - PostgreSQL (`TournamentEntity`, `TournamentRegistrationEntity`)
 
 ### `notification`
 
@@ -109,12 +119,21 @@
 ## Request Flow
 
 1. Request enters an HTTP controller in `apps/api-gateway/src/controllers/*`.
-2. Controller calls a shared client such as `IdentityClient`, `BookingClient`, or `BilliardTablesClient`.
-3. The client sends an RMQ message using a name from `libs/shared/src/services/*/*.messages.ts`.
-4. Target microservice handles the message in its controller with `@MessagePattern(...)`.
-5. Service layer performs business logic and repository access.
-6. Result is mapped to a DTO and returned to the gateway.
-7. `RpcToHttpExceptionFilter` converts RPC errors back into HTTP responses.
+2. `api-gateway` resolves any data needed from multiple services and composes the command/query payload.
+3. Controller calls a shared client such as `IdentityClient`, `BookingClient`, or `BilliardTablesClient`.
+4. The client sends an RMQ message using a name from `libs/shared/src/services/*/*.messages.ts`.
+5. Target microservice handles the message in its controller with `@MessagePattern(...)`.
+6. Service layer performs business logic and repository access using only local persistence and prepared input parameters.
+7. Result is mapped to a DTO and returned to the gateway.
+8. `RpcToHttpExceptionFilter` converts RPC errors back into HTTP responses.
+
+## Service Interaction Rule
+
+- Business microservices must stay isolated from each other for domain data reads.
+- `api-gateway` is the aggregation boundary for cross-service data.
+- Direct service-to-service calls are only allowed for:
+  - `storage`
+  - `notification`
 
 ## Architectural Style Observed In Code
 
@@ -149,6 +168,8 @@
 ```text
 POST /bookings
 -> apps/api-gateway/src/controllers/bookings.controller.ts
+-> IdentityClient.getById()
+-> BilliardTablesClient.getById()
 -> BookingClient.create()
 -> BookingMessage.CREATE
 -> apps/booking/src/booking.controller.ts

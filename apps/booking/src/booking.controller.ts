@@ -4,6 +4,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import type { BilliardTableId } from '@app/shared/dtos/billiard-table.dto';
 import {
   BookingDto,
+  CreateBookingContextDto,
   CreateBookingDto,
   UpdateBookingStatusDto,
 } from '@app/shared/dtos/booking.dto';
@@ -23,9 +24,14 @@ export class BookingController {
 
   @MessagePattern(BookingMessage.CREATE)
   async create(
-    @Payload() [userId, data]: [UserId, CreateBookingDto],
+    @Payload()
+    [userId, data, context]: [
+      UserId,
+      CreateBookingDto,
+      CreateBookingContextDto,
+    ],
   ): Promise<BookingDto> {
-    return await this.bookingService.create(userId, data);
+    return await this.bookingService.create(userId, data, context);
   }
 
   @MessagePattern(BookingMessage.UPDATE_STATUS_BY_ID)

@@ -55,9 +55,21 @@ For a new persisted concept:
 4. Add a migration in `apps/migrations/src/migrations`.
 5. Implement service methods that:
    - validate input
-   - load required related records
+   - load required local records
    - map entity to DTO before returning
 6. If other services must call it, add shared RMQ message names and a typed client wrapper.
+
+## Service Isolation Rule
+
+- Services MUST NOT call other services for domain data.
+- All cross-service data aggregation MUST happen in `api-gateway`.
+- Services MUST rely on prepared input parameters and their own local persistence only.
+- Allowed direct service-to-service exceptions:
+  - `storage`
+  - `notification`
+- Use `bookings` as the reference pattern:
+  - `BookingsController` resolves user and billiard table data in the gateway
+  - `BookingService` accepts the prepared booking payload and does not fetch external data
 
 ## What Not To Do
 
@@ -65,14 +77,13 @@ For a new persisted concept:
 - Do not bypass shared client wrappers and inject raw `ClientProxy` in random feature code.
 - Do not return TypeORM entities directly when the current apps map to DTOs.
 - Do not put domain persistence into `api-gateway`.
+- Do not fetch domain data from another service inside a microservice.
 - Do not assume `@RoleAccess(...)` alone enforces authorization.
   - `RoleAccessGuard` exists, but registration is NOT FOUND IN CODEBASE.
 - Do not introduce HTTP calls between services unless architecture is intentionally changed.
 
 ## Anti-Patterns Already Visible In This Repo
 
-- `apps/booking/src/booking.module.ts` includes extra entities with comment:
-  - `// TODO: No need this entities`
 - `BookingsController.createManual()` returns before the follow-up status update finishes.
 - Several storage deletions are emitted without awaiting completion:
   - `IdentityService.updateEntityPhotoById()`

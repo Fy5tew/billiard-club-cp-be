@@ -13,6 +13,7 @@ import {
   BookingDto,
   BookingStatus,
   BookingId,
+  CreateBookingContextDto,
   CreateBookingDto,
   UpdateBookingStatusDto,
   GetBookedSlotsDto,
@@ -20,19 +21,19 @@ import {
 } from '@app/shared/dtos/booking.dto';
 import type { UserId } from '@app/shared/dtos/user.dto';
 import { BookingEntity } from '@app/shared/entities/booking.entity';
-import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billiard-tables.client';
-import { IdentityClient } from '@app/shared/services/identity/identity.client';
 
 @Injectable()
 export class BookingService {
   constructor(
     @InjectRepository(BookingEntity)
     private readonly bookings: Repository<BookingEntity>,
-    private readonly identityClient: IdentityClient,
-    private readonly billiardTablesClient: BilliardTablesClient,
   ) {}
 
-  async create(userId: UserId, data: CreateBookingDto): Promise<BookingDto> {
+  async create(
+    userId: UserId,
+    data: CreateBookingDto,
+    context: CreateBookingContextDto,
+  ): Promise<BookingDto> {
     const currentDate = new Date();
     currentDate.setHours(currentDate.getHours() + 3);
 
@@ -45,9 +46,6 @@ export class BookingService {
     if (new Date(startTime) >= new Date(endTime)) {
       throw new BadRequestException('Start time must be before end time');
     }
-
-    const table = await this.billiardTablesClient.getById(billiardTableId);
-    await this.identityClient.getById(userId);
 
     const overlappingBooking = await this.bookings.findOne({
       where: {
@@ -67,7 +65,7 @@ export class BookingService {
     const durationHours =
       (new Date(endTime).getTime() - new Date(startTime).getTime()) /
       (1000 * 60 * 60);
-    const totalCost = durationHours * Number(table.hourlyPrice);
+    const totalCost = durationHours * Number(context.hourlyPrice);
 
     const entity = this.bookings.create({
       userId,

@@ -15,11 +15,20 @@
 
 - RPC request/response:
   - implemented with `client.send(...)`
-  - used by identity, billiard tables, booking, storage
+  - used by api-gateway, identity, billiard tables, booking, tournaments, storage
 - fire-and-forget event style:
   - implemented with `client.emit(...)`
   - used by notification email send
   - used by storage delete file
+
+## Aggregation Rule
+
+- `api-gateway` is the only place that should aggregate domain data from multiple services.
+- Business services must not call other business services for data.
+- Business services should trust prepared method parameters and use only local repositories.
+- Allowed direct exceptions:
+  - `storage`
+  - `notification`
 
 ## Shared Service Contracts
 
@@ -91,6 +100,7 @@
   - `identity`
   - `billiard-tables`
   - `booking`
+  - `tournaments`
 - source: `apps/api-gateway/src/api-gateway.module.ts`
 
 ### `identity`
@@ -109,9 +119,13 @@
 ### `booking`
 
 - depends on:
-  - `identity`
-  - `billiard-tables`
+  - no direct service clients for domain data
 - source: `apps/booking/src/booking.module.ts`
+
+### `tournaments`
+
+- no internal service clients found in codebase
+- source: `apps/tournaments/src/tournaments.module.ts`
 
 ### `notification`
 
@@ -135,14 +149,13 @@
 ### Create booking flow
 
 1. `BookingsController.create()`
-2. `BookingClient.create()`
-3. `BookingController.create()`
-4. `BookingService.create()`
-5. `BookingService.create()` calls:
-   - `BilliardTablesClient.getById()`
-   - `IdentityClient.getById()`
-6. booking saved to PostgreSQL
-7. response `BookingDto`
+2. `IdentityClient.getById()`
+3. `BilliardTablesClient.getById()`
+4. `BookingClient.create()`
+5. `BookingController.create()`
+6. `BookingService.create()`
+7. booking saved to PostgreSQL
+8. response `BookingDto`
 
 ### Update user photo flow
 

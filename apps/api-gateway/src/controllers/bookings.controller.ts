@@ -25,6 +25,7 @@ import {
   BookingFullDto,
   type BookingId,
   BookingStatus,
+  CreateBookingContextDto,
   CreateBookingDto,
   UpdateBookingStatusDto,
   GetBookedSlotsDto,
@@ -91,7 +92,7 @@ export class BookingsController {
     @Req() { user }: RequestWithUser,
     @Body() data: CreateBookingDto,
   ): Promise<BookingDto> {
-    return this.bookingClient.create(user.id, data);
+    return this.createBooking(user.id, data);
   }
 
   @ApiBearerAuth()
@@ -115,7 +116,7 @@ export class BookingsController {
   async createManual(
     @Body() { userId, ...data }: CreateBookingManualDto,
   ): Promise<BookingDto> {
-    const booking = await this.bookingClient.create(userId, data);
+    const booking = await this.createBooking(userId, data);
     void this.bookingClient.updateStatusById(booking.id, {
       status: BookingStatus.Confirmed,
     });
@@ -331,5 +332,21 @@ export class BookingsController {
         'You do not have permission to modify this booking',
       );
     }
+  }
+
+  private async createBooking(
+    userId: UserId,
+    data: CreateBookingDto,
+  ): Promise<BookingDto> {
+    const [, billiardTable] = await Promise.all([
+      this.identityClient.getById(userId),
+      this.billiardTablesClient.getById(data.billiardTableId),
+    ]);
+
+    const context: CreateBookingContextDto = {
+      hourlyPrice: Number(billiardTable.hourlyPrice),
+    };
+
+    return this.bookingClient.create(userId, data, context);
   }
 }

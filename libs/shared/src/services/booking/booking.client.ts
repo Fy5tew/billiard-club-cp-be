@@ -8,6 +8,7 @@ import {
   BookedSlotDto,
   BookingDto,
   BookingId,
+  CreateBookingContextDto,
   CreateBookingDto,
   GetBookedSlotsDto,
   UpdateBookingStatusDto,
@@ -19,12 +20,16 @@ import { Service } from '../services.types';
 export class BookingClient {
   constructor(@Inject(Service.BOOKING) private readonly client: ClientProxy) {}
 
-  async create(userId: UserId, data: CreateBookingDto): Promise<BookingDto> {
+  async create(
+    userId: UserId,
+    data: CreateBookingDto,
+    context: CreateBookingContextDto,
+  ): Promise<BookingDto> {
     return firstValueFrom(
-      this.client.send<BookingDto, [UserId, CreateBookingDto]>(
-        BookingMessage.CREATE,
-        [userId, data],
-      ),
+      this.client.send<
+        BookingDto,
+        [UserId, CreateBookingDto, CreateBookingContextDto]
+      >(BookingMessage.CREATE, [userId, data, context]),
     );
   }
 
