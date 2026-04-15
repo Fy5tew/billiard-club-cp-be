@@ -1,7 +1,10 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
-import { TournamentRegistrationDto } from '@app/shared/dtos/tournament-registration.dto';
+import {
+  CreateTournamentRegistrationManualDto,
+  TournamentRegistrationDto,
+} from '@app/shared/dtos/tournament-registration.dto';
 import type { TournamentRegistrationId } from '@app/shared/dtos/tournament-registration.dto';
 import {
   TournamentDto,
@@ -75,6 +78,14 @@ export class TournamentsController {
     @Payload() [tournamentId, userId]: [TournamentId, UserId],
   ): Promise<TournamentRegistrationDto> {
     return this.tournamentsService.register(tournamentId, userId);
+  }
+
+  @MessagePattern(TournamentsMessage.REGISTER_MANUAL)
+  async registerManual(
+    @Payload()
+    [tournamentId, data]: [TournamentId, CreateTournamentRegistrationManualDto],
+  ): Promise<TournamentRegistrationDto> {
+    return this.tournamentsService.registerManual(tournamentId, data);
   }
 
   @MessagePattern(TournamentsMessage.CANCEL_REGISTRATION)

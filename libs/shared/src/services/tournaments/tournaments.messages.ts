@@ -10,6 +10,7 @@ export enum TournamentsMessage {
   START_BY_ID = 'start_by_id',
   COMPLETE_BY_ID = 'complete_by_id',
   REGISTER = 'register',
+  REGISTER_MANUAL = 'register_manual',
   CANCEL_REGISTRATION = 'cancel_registration',
   APPROVE_REGISTRATION = 'approve_registration',
   REJECT_REGISTRATION = 'reject_registration',

@@ -9,6 +9,7 @@ import { plainToInstance } from 'class-transformer';
 import { In, Repository } from 'typeorm';
 
 import {
+  CreateTournamentRegistrationManualDto,
   TournamentRegistrationDto,
   TournamentRegistrationId,
   TournamentRegistrationStatus,
@@ -274,6 +275,54 @@ export class TournamentsService {
     return this.mapRegistrationToDto(savedRegistration);
   }
 
+  async registerManual(
+    tournamentId: TournamentId,
+    { userId }: CreateTournamentRegistrationManualDto,
+  ): Promise<TournamentRegistrationDto> {
+    const tournament = await this.getTournamentEntityById(tournamentId, false);
+
+    if (tournament.status !== TournamentStatus.Published) {
+      throw new BadRequestException('Tournament registration is closed');
+    }
+
+    this.ensureRegistrationIsOpen(tournament);
+
+    const activeRegistration = await this.registrations.findOne({
+      where: {
+        tournamentId,
+        userId,
+        status: In([
+          TournamentRegistrationStatus.Pending,
+          TournamentRegistrationStatus.Approved,
+        ]),
+      },
+    });
+
+    if (activeRegistration?.status === TournamentRegistrationStatus.Approved) {
+      throw new ConflictException('User already has an approved registration');
+    }
+
+    const approvedCount =
+      await this.getApprovedRegistrationsCount(tournamentId);
+    if (approvedCount >= tournament.maxParticipants) {
+      throw new ConflictException('Tournament participant limit reached');
+    }
+
+    const registration =
+      activeRegistration ??
+      this.registrations.create({
+        tournamentId,
+        userId,
+      });
+
+    registration.status = TournamentRegistrationStatus.Approved;
+
+    const savedRegistration = await this.registrations.save(registration);
+    await this.syncTournamentRegistrationState(tournamentId);
+
+    return this.mapRegistrationToDto(savedRegistration);
+  }
+
   async cancelRegistration(
     id: TournamentRegistrationId,
   ): Promise<TournamentRegistrationDto> {
@@ -366,22 +415,28 @@ export class TournamentsService {
 
     const registrations = await this.registrations.find({
       where: { tournamentId },
-      order: { id: 'ASC' },
+      order: { createdAt: 'ASC' },
     });
+    const approvedRegistrationsCount =
+      await this.getApprovedRegistrationsCount(tournamentId);
 
-    return registrations.map((registration) =>
-      this.mapRegistrationToDto(registration),
+    return Promise.all(
+      registrations.map((registration) =>
+        this.mapRegistrationToDto(registration, approvedRegistrationsCount),
+      ),
     );
   }
 
   async getByUserId(userId: UserId): Promise<TournamentRegistrationDto[]> {
     const registrations = await this.registrations.find({
       where: { userId },
-      order: { id: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
 
-    return registrations.map((registration) =>
-      this.mapRegistrationToDto(registration),
+    return Promise.all(
+      registrations.map((registration) =>
+        this.mapRegistrationToDto(registration),
+      ),
     );
   }
 
@@ -599,16 +654,33 @@ export class TournamentsService {
   }
 
   private mapTournamentToDto(entity: TournamentEntity): TournamentDto {
-    return plainToInstance(TournamentDto, entity, {
-      excludeExtraneousValues: true,
-    });
+    return plainToInstance(
+      TournamentDto,
+      {
+        ...entity,
+        entryFee: Number(entity.entryFee),
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
-  private mapRegistrationToDto(
+  private async mapRegistrationToDto(
     entity: TournamentRegistrationEntity,
-  ): TournamentRegistrationDto {
-    return plainToInstance(TournamentRegistrationDto, entity, {
-      excludeExtraneousValues: true,
-    });
+    approvedRegistrationsCount?: number,
+  ): Promise<TournamentRegistrationDto> {
+    return plainToInstance(
+      TournamentRegistrationDto,
+      {
+        ...entity,
+        approvedRegistrationsCount:
+          approvedRegistrationsCount ??
+          (await this.getApprovedRegistrationsCount(entity.tournamentId)),
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 }

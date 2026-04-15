@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -35,4 +36,7 @@ export class TournamentRegistrationEntity {
     default: TournamentRegistrationStatus.Pending,
   })
   status: TournamentRegistrationStatus;
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

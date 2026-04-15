@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { TournamentsMessage } from './tournaments.messages';
 import {
+  CreateTournamentRegistrationManualDto,
   TournamentRegistrationDto,
   TournamentRegistrationId,
 } from '../../dtos/tournament-registration.dto';
@@ -124,6 +125,18 @@ export class TournamentsClient {
         TournamentsMessage.REGISTER,
         [tournamentId, userId],
       ),
+    );
+  }
+
+  async registerManual(
+    tournamentId: TournamentId,
+    data: CreateTournamentRegistrationManualDto,
+  ): Promise<TournamentRegistrationDto> {
+    return firstValueFrom(
+      this.client.send<
+        TournamentRegistrationDto,
+        [TournamentId, CreateTournamentRegistrationManualDto]
+      >(TournamentsMessage.REGISTER_MANUAL, [tournamentId, data]),
     );
   }
 

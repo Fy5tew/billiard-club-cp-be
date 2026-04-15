@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
-import { IsEnum, IsUUID } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsDate, IsEnum, IsInt, IsUUID, ValidateNested } from 'class-validator';
 
 import type { TournamentId } from './tournament.dto';
-import type { UserId } from './user.dto';
+import { UserDto, type UserId } from './user.dto';
 
 export type TournamentRegistrationId = string;
 
@@ -39,4 +39,30 @@ export class TournamentRegistrationDto {
   @Expose()
   @IsEnum(TournamentRegistrationStatus)
   status: TournamentRegistrationStatus;
+
+  @ApiProperty({ example: '2026-04-15T10:00:00Z' })
+  @Expose()
+  @IsDate()
+  @Type(() => Date)
+  createdAt: Date;
+
+  @ApiProperty({ example: 8 })
+  @Expose()
+  @IsInt()
+  approvedRegistrationsCount: number;
+}
+
+export class TournamentRegistrationFullDto extends TournamentRegistrationDto {
+  @ApiProperty({ type: () => UserDto, nullable: true })
+  @Expose()
+  @ValidateNested()
+  @Type(() => UserDto)
+  user: UserDto | null;
+}
+
+export class CreateTournamentRegistrationManualDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001' })
+  @Expose()
+  @IsUUID()
+  userId: UserId;
 }

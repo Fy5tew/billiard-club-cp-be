@@ -19,7 +19,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { TournamentRegistrationDto } from '@app/shared/dtos/tournament-registration.dto';
+import {
+  CreateTournamentRegistrationManualDto,
+  TournamentRegistrationDto,
+  TournamentRegistrationFullDto,
+} from '@app/shared/dtos/tournament-registration.dto';
 import type { TournamentRegistrationId } from '@app/shared/dtos/tournament-registration.dto';
 import {
   TournamentDto,
@@ -28,6 +32,7 @@ import {
 } from '@app/shared/dtos/tournament.dto';
 import type { TournamentId } from '@app/shared/dtos/tournament.dto';
 import { UserRole } from '@app/shared/dtos/user.dto';
+import { IdentityClient } from '@app/shared/services/identity/identity.client';
 import { TournamentsClient } from '@app/shared/services/tournaments/tournaments.client';
 import type { RequestWithUser } from '@app/shared/types/auth.types';
 
@@ -37,7 +42,10 @@ import { TournamentsRoute } from '../constants/tournaments.constants';
 @ApiTags('Tournaments')
 @Controller(TournamentsRoute.BASE)
 export class TournamentsController {
-  constructor(private readonly tournamentsClient: TournamentsClient) {}
+  constructor(
+    private readonly identityClient: IdentityClient,
+    private readonly tournamentsClient: TournamentsClient,
+  ) {}
 
   @ApiOperation({ summary: 'Get tournaments list' })
   @ApiResponse({ status: HttpStatus.OK, type: [TournamentDto] })
@@ -136,20 +144,41 @@ export class TournamentsController {
   async register(
     @Param('id', ParseUUIDPipe) id: TournamentId,
     @Req() { user }: RequestWithUser,
-  ): Promise<TournamentRegistrationDto> {
-    return this.tournamentsClient.register(id, user.id);
+  ): Promise<TournamentRegistrationFullDto> {
+    const registration = await this.tournamentsClient.register(id, user.id);
+    return this.mapRegistrationToFull(registration);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Register user for tournament manually' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiBody({ type: CreateTournamentRegistrationManualDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    type: TournamentRegistrationFullDto,
+  })
+  @RoleAccess(UserRole.Manager)
+  @Post(TournamentsRoute.TOURNAMENT_REGISTER_MANUAL)
+  async registerManual(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+    @Body() data: CreateTournamentRegistrationManualDto,
+  ): Promise<TournamentRegistrationFullDto> {
+    await this.identityClient.getById(data.userId);
+
+    const registration = await this.tournamentsClient.registerManual(id, data);
+    return this.mapRegistrationToFull(registration);
   }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel own tournament registration' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationFullDto })
   @RoleAccess(UserRole.User)
   @Post(TournamentsRoute.REGISTRATION_CANCEL)
   async cancelRegistration(
     @Param('id', ParseUUIDPipe) id: TournamentRegistrationId,
     @Req() { user }: RequestWithUser,
-  ): Promise<TournamentRegistrationDto> {
+  ): Promise<TournamentRegistrationFullDto> {
     const registrations = await this.tournamentsClient.getByUserId(user.id);
     const registration = registrations.find((item) => item.id === id);
 
@@ -159,78 +188,88 @@ export class TournamentsController {
       );
     }
 
-    return this.tournamentsClient.cancelRegistration(id);
+    return this.mapRegistrationToFull(
+      await this.tournamentsClient.cancelRegistration(id),
+    );
   }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user tournament registrations' })
-  @ApiResponse({ status: HttpStatus.OK, type: [TournamentRegistrationDto] })
+  @ApiResponse({ status: HttpStatus.OK, type: [TournamentRegistrationFullDto] })
   @RoleAccess(UserRole.User)
   @Get(TournamentsRoute.MY_REGISTRATIONS)
   async getMyRegistrations(
     @Req() { user }: RequestWithUser,
-  ): Promise<TournamentRegistrationDto[]> {
-    return this.tournamentsClient.getByUserId(user.id);
+  ): Promise<TournamentRegistrationFullDto[]> {
+    return this.mapRegistrationsToFull(
+      await this.tournamentsClient.getByUserId(user.id),
+    );
   }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get tournament registrations' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: [TournamentRegistrationDto] })
+  @ApiResponse({ status: HttpStatus.OK, type: [TournamentRegistrationFullDto] })
   @RoleAccess(UserRole.Manager)
   @Get(TournamentsRoute.TOURNAMENT_REGISTRATIONS)
   async getByTournamentId(
     @Param('id', ParseUUIDPipe) id: TournamentId,
-  ): Promise<TournamentRegistrationDto[]> {
-    return this.tournamentsClient.getByTournamentId(id);
+  ): Promise<TournamentRegistrationFullDto[]> {
+    return this.mapRegistrationsToFull(
+      await this.tournamentsClient.getByTournamentId(id),
+    );
   }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Approve tournament registration' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationFullDto })
   @RoleAccess(UserRole.Manager)
   @Post(TournamentsRoute.REGISTRATION_APPROVE)
   async approve(
     @Param('id', ParseUUIDPipe) id: TournamentRegistrationId,
-  ): Promise<TournamentRegistrationDto> {
-    return this.tournamentsClient.approve(id);
+  ): Promise<TournamentRegistrationFullDto> {
+    return this.mapRegistrationToFull(await this.tournamentsClient.approve(id));
   }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reject tournament registration' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationFullDto })
   @RoleAccess(UserRole.Manager)
   @Post(TournamentsRoute.REGISTRATION_REJECT)
   async reject(
     @Param('id', ParseUUIDPipe) id: TournamentRegistrationId,
-  ): Promise<TournamentRegistrationDto> {
-    return this.tournamentsClient.reject(id);
+  ): Promise<TournamentRegistrationFullDto> {
+    return this.mapRegistrationToFull(await this.tournamentsClient.reject(id));
   }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark participant as attended' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationFullDto })
   @RoleAccess(UserRole.Manager)
   @Post(TournamentsRoute.REGISTRATION_ATTENDED)
   async markAttended(
     @Param('id', ParseUUIDPipe) id: TournamentRegistrationId,
-  ): Promise<TournamentRegistrationDto> {
-    return this.tournamentsClient.markAttended(id);
+  ): Promise<TournamentRegistrationFullDto> {
+    return this.mapRegistrationToFull(
+      await this.tournamentsClient.markAttended(id),
+    );
   }
 
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark participant as no-show' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentRegistrationFullDto })
   @RoleAccess(UserRole.Manager)
   @Post(TournamentsRoute.REGISTRATION_NO_SHOW)
   async markNoShow(
     @Param('id', ParseUUIDPipe) id: TournamentRegistrationId,
-  ): Promise<TournamentRegistrationDto> {
-    return this.tournamentsClient.markNoShow(id);
+  ): Promise<TournamentRegistrationFullDto> {
+    return this.mapRegistrationToFull(
+      await this.tournamentsClient.markNoShow(id),
+    );
   }
 
   @ApiBearerAuth()
@@ -255,5 +294,34 @@ export class TournamentsController {
     @Param('id', ParseUUIDPipe) id: TournamentId,
   ): Promise<TournamentDto> {
     return this.tournamentsClient.completeById(id);
+  }
+
+  private async mapRegistrationsToFull(
+    registrations: TournamentRegistrationDto[],
+  ): Promise<TournamentRegistrationFullDto[]> {
+    return Promise.all(
+      registrations.map((registration) =>
+        this.mapRegistrationToFull(registration),
+      ),
+    );
+  }
+
+  private async mapRegistrationToFull(
+    registration: TournamentRegistrationDto,
+  ): Promise<TournamentRegistrationFullDto> {
+    return {
+      ...registration,
+      user: await this.fetchSafe(() =>
+        this.identityClient.getById(registration.userId),
+      ),
+    };
+  }
+
+  private async fetchSafe<T>(request: () => Promise<T>): Promise<T | null> {
+    try {
+      return await request();
+    } catch {
+      return null;
+    }
   }
 }

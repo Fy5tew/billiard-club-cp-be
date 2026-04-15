@@ -10,6 +10,7 @@ export enum TournamentsRoute {
   REGISTRATION_NO_SHOW = 'registrations/:id/no-show',
   TOURNAMENT_REGISTRATIONS = ':id/registrations',
   TOURNAMENT_REGISTER = ':id/register',
+  TOURNAMENT_REGISTER_MANUAL = ':id/register/manual',
   TOURNAMENT_PUBLISH = ':id/publish',
   TOURNAMENT_CANCEL = ':id/cancel',
   TOURNAMENT_START = ':id/start',
