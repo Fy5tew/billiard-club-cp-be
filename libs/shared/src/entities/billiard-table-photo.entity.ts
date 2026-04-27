@@ -1,24 +1,38 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 import { BilliardTableEntity } from './billiard-table.entity';
-import type { BilliardTablePhotoId } from '../dtos/billiard-table.dto';
+import type {
+  BilliardTableId,
+  BilliardTablePhotoId,
+} from '../dtos/billiard-table.dto';
 
 @Entity({ name: 'billiard_table_photos' })
 export class BilliardTablePhotoEntity {
   @PrimaryGeneratedColumn('uuid')
   id: BilliardTablePhotoId;
 
-  @Column({ type: 'varchar', nullable: false })
-  billiardTableId: string;
+  @Column({ name: 'billiard_table_id', type: 'uuid', nullable: false })
+  billiardTableId: BilliardTableId;
 
   @Column({ type: 'varchar', nullable: false })
   photoFilename: string;
+
+  @Column({ type: 'int', nullable: false })
+  sortOrder: number;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
 
   @ManyToOne(() => BilliardTableEntity, (table) => table.photos, {
     onDelete: 'CASCADE',

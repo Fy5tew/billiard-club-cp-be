@@ -1,12 +1,15 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import {
+  ArrayUnique,
+  IsArray,
   IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUrl,
+  IsUUID,
   Min,
 } from 'class-validator';
 
@@ -43,6 +46,19 @@ export class BilliardTablePhotoDto {
   @Expose()
   @IsString()
   photoFilename: string;
+
+  @ApiProperty()
+  @Expose()
+  @IsNumber()
+  sortOrder: number;
+
+  @ApiProperty()
+  @Expose()
+  createdAt: Date;
+
+  @ApiProperty()
+  @Expose()
+  updatedAt: Date;
 }
 
 export class BilliardTableDto {
@@ -114,5 +130,23 @@ export class CreateBilliardTablePhotoDto extends OmitType(UploadFileDto, [
 export class UpdateBilliardTablePhotosDto {
   @ApiProperty({ type: 'string', isArray: true })
   @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @ArrayUnique()
   photoIdsToDelete?: BilliardTablePhotoId[];
+
+  @ApiProperty({ type: 'string', isArray: true, required: false })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @ArrayUnique()
+  orderedPhotoIds?: BilliardTablePhotoId[];
+}
+
+export class ReorderBilliardTablePhotosDto {
+  @ApiProperty({ type: 'string', isArray: true })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @ArrayUnique()
+  photoIds: BilliardTablePhotoId[];
 }

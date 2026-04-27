@@ -5,5 +5,7 @@ export enum BilliardTablesMessage {
   UPDATE_BY_ID = 'update_by_id',
   ADD_PHOTOS = 'add_photos',
   UPDATE_PHOTOS = 'update_photos',
+  DELETE_PHOTO_BY_ID = 'delete_photo_by_id',
+  REORDER_PHOTOS = 'reorder_photos',
   DELETE_BY_ID = 'delete_by_id',
 }

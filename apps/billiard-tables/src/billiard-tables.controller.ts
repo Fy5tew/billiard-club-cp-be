@@ -4,11 +4,13 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   BilliardTableDto,
   CreateBilliardTableDto,
+  ReorderBilliardTablePhotosDto,
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
 } from '@app/shared/dtos/billiard-table.dto';
 import type {
   BilliardTableId,
+  BilliardTablePhotoId,
   CreateBilliardTablePhotoDto,
 } from '@app/shared/dtos/billiard-table.dto';
 import { BilliardTablesMessage } from '@app/shared/services/billiard-tables/billiard-tables.messages';
@@ -57,6 +59,21 @@ export class BilliardTablesController {
     [tableId, updateData]: [BilliardTableId, UpdateBilliardTablePhotosDto],
   ): Promise<BilliardTableDto> {
     return this.billiardTablesService.updatePhotos(tableId, updateData);
+  }
+
+  @MessagePattern(BilliardTablesMessage.DELETE_PHOTO_BY_ID)
+  async deletePhotoById(
+    @Payload() [tableId, photoId]: [BilliardTableId, BilliardTablePhotoId],
+  ): Promise<BilliardTableDto> {
+    return this.billiardTablesService.deletePhotoById(tableId, photoId);
+  }
+
+  @MessagePattern(BilliardTablesMessage.REORDER_PHOTOS)
+  async reorderPhotos(
+    @Payload()
+    [tableId, data]: [BilliardTableId, ReorderBilliardTablePhotosDto],
+  ): Promise<BilliardTableDto> {
+    return this.billiardTablesService.reorderPhotos(tableId, data);
   }
 
   @MessagePattern(BilliardTablesMessage.DELETE_BY_ID)

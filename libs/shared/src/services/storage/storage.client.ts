@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { defaultIfEmpty, firstValueFrom } from 'rxjs';
 
 import {
   DeleteFileDto,
@@ -34,7 +34,11 @@ export class StorageClient {
     );
   }
 
-  deleteFile(data: DeleteFileDto): void {
-    this.client.emit<void, DeleteFileDto>(StorageMessage.DELETE_FILE, data);
+  async deleteFile(data: DeleteFileDto): Promise<void> {
+    await firstValueFrom(
+      this.client
+        .emit<void, DeleteFileDto>(StorageMessage.DELETE_FILE, data)
+        .pipe(defaultIfEmpty(undefined)),
+    );
   }
 }

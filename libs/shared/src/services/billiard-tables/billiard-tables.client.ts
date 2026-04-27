@@ -10,7 +10,9 @@ import {
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
   BilliardTableId,
+  BilliardTablePhotoId,
   CreateBilliardTablePhotoDto,
+  ReorderBilliardTablePhotosDto,
 } from '../../dtos/billiard-table.dto';
 
 @Injectable()
@@ -79,6 +81,30 @@ export class BilliardTablesClient {
         BilliardTableDto,
         [BilliardTableId, UpdateBilliardTablePhotosDto]
       >(BilliardTablesMessage.UPDATE_PHOTOS, [tableId, updateData]),
+    );
+  }
+
+  async deletePhotoById(
+    tableId: BilliardTableId,
+    photoId: BilliardTablePhotoId,
+  ): Promise<BilliardTableDto> {
+    return firstValueFrom(
+      this.client.send<
+        BilliardTableDto,
+        [BilliardTableId, BilliardTablePhotoId]
+      >(BilliardTablesMessage.DELETE_PHOTO_BY_ID, [tableId, photoId]),
+    );
+  }
+
+  async reorderPhotos(
+    tableId: BilliardTableId,
+    data: ReorderBilliardTablePhotosDto,
+  ): Promise<BilliardTableDto> {
+    return firstValueFrom(
+      this.client.send<
+        BilliardTableDto,
+        [BilliardTableId, ReorderBilliardTablePhotosDto]
+      >(BilliardTablesMessage.REORDER_PHOTOS, [tableId, data]),
     );
   }
 

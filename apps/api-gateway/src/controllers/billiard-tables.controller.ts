@@ -22,14 +22,16 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 
-import type { BilliardTableId } from '@app/shared/dtos/billiard-table.dto';
 import {
   BilliardTableDto,
   CreateBilliardTableDto,
+  ReorderBilliardTablePhotosDto,
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
   UpdateBilliardTableStatusDto,
 } from '@app/shared/dtos/billiard-table.dto';
+import type { BilliardTableId } from '@app/shared/dtos/billiard-table.dto';
+import type { BilliardTablePhotoId } from '@app/shared/dtos/billiard-table.dto';
 import { UserRole } from '@app/shared/dtos/user.dto';
 import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billiard-tables.client';
 import type { UploadedFilePayload } from '@app/shared/types/request.types';
@@ -285,6 +287,77 @@ export class BilliardTablesController {
     @Body() updateData: UpdateBilliardTablePhotosDto,
   ): Promise<BilliardTableDto> {
     return this.billiardTablesClient.updatePhotos(id, updateData);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete billiard table photo' })
+  @ApiParam({ name: 'id', description: 'Billiard table ID' })
+  @ApiParam({ name: 'photoId', description: 'Billiard table photo ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Deleted billiard table photo successfully',
+    type: BilliardTableDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Billiard table or photo was not found',
+  })
+  @RoleAccess(UserRole.Admin)
+  @Delete(BilliardTablesRoute.PHOTO)
+  async deletePhotoById(
+    @Param('id', ParseUUIDPipe) id: BilliardTableId,
+    @Param('photoId', ParseUUIDPipe) photoId: BilliardTablePhotoId,
+  ): Promise<BilliardTableDto> {
+    return this.billiardTablesClient.deletePhotoById(id, photoId);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reorder billiard table photos' })
+  @ApiParam({ name: 'id', description: 'Billiard table ID' })
+  @ApiBody({
+    description: 'New ordered list of all billiard table photo IDs',
+    type: ReorderBilliardTablePhotosDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Reordered photos successfully',
+    type: BilliardTableDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Billiard table or photo was not found',
+  })
+  @RoleAccess(UserRole.Admin)
+  @Put(BilliardTablesRoute.PHOTOS_REORDER)
+  async reorderPhotos(
+    @Param('id', ParseUUIDPipe) id: BilliardTableId,
+    @Body() data: ReorderBilliardTablePhotosDto,
+  ): Promise<BilliardTableDto> {
+    return this.billiardTablesClient.reorderPhotos(id, data);
   }
 
   @ApiBearerAuth()

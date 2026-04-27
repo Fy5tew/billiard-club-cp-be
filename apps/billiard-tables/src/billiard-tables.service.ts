@@ -16,6 +16,7 @@ import {
   BilliardTablePhotoId,
   CreateBilliardTableDto,
   CreateBilliardTablePhotoDto,
+  ReorderBilliardTablePhotosDto,
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
 } from '@app/shared/dtos/billiard-table.dto';
@@ -62,10 +63,28 @@ export class BilliardTablesService {
 
   async updatePhotos(
     tableId: BilliardTableId,
-    { photoIdsToDelete }: UpdateBilliardTablePhotosDto,
+    data: UpdateBilliardTablePhotosDto,
   ): Promise<BilliardTableDto> {
     return await this.mapTableEntityToDto(
-      await this.updateEntityPhotos(tableId, photoIdsToDelete),
+      await this.updateEntityPhotos(tableId, data),
+    );
+  }
+
+  async deletePhotoById(
+    tableId: BilliardTableId,
+    photoId: BilliardTablePhotoId,
+  ): Promise<BilliardTableDto> {
+    return await this.mapTableEntityToDto(
+      await this.deleteEntityPhotoById(tableId, photoId),
+    );
+  }
+
+  async reorderPhotos(
+    tableId: BilliardTableId,
+    { photoIds }: ReorderBilliardTablePhotosDto,
+  ): Promise<BilliardTableDto> {
+    return await this.mapTableEntityToDto(
+      await this.reorderEntityPhotos(tableId, photoIds),
     );
   }
 
@@ -74,7 +93,11 @@ export class BilliardTablesService {
   }
 
   async getTables(): Promise<BilliardTableDto[]> {
-    const tables = await this.tables.find({ relations: ['photos'] });
+    const tables = await this.tables.find({
+      relations: { photos: true },
+      order: { photos: { sortOrder: 'ASC', createdAt: 'ASC' } },
+    });
+
     return Promise.all(tables.map((table) => this.mapTableEntityToDto(table)));
   }
 
@@ -98,13 +121,15 @@ export class BilliardTablesService {
     const newTable = await this.tables.save(table);
 
     if (photoFilenames?.length) {
-      const photoEntities = photoFilenames.map((filename) =>
+      const photoEntities = photoFilenames.map((filename, index) =>
         this.photos.create({
           billiardTableId: newTable.id,
           photoFilename: filename,
+          sortOrder: index,
           billiardTable: newTable,
         }),
       );
+
       await this.photos.save(photoEntities);
       newTable.photos = photoEntities;
     }
@@ -117,7 +142,9 @@ export class BilliardTablesService {
     data: UpdateBilliardTableDto,
   ): Promise<BilliardTableEntity> {
     const table = await this.getEntityById(id);
+
     Object.assign(table, data);
+
     return await this.tables.save(table);
   }
 
@@ -126,10 +153,11 @@ export class BilliardTablesService {
     photosData: CreateBilliardTablePhotoDto[],
   ): Promise<BilliardTableEntity> {
     const table = await this.getEntityById(tableId);
+    const nextSortOrder = table.photos.length;
 
     const photoEntities = await Promise.all(
       photosData.map(
-        async ({ filename: originalFilename, buffer, mimeType }) => {
+        async ({ filename: originalFilename, buffer, mimeType }, index) => {
           const newPhotoFilename = `${uuid()}-${originalFilename}`;
           const photoPath = getBilliardTablePhotoPath(
             tableId,
@@ -146,6 +174,7 @@ export class BilliardTablesService {
           return this.photos.create({
             billiardTableId: tableId,
             photoFilename: newPhotoFilename,
+            sortOrder: nextSortOrder + index,
             billiardTable: table,
           });
         },
@@ -154,41 +183,26 @@ export class BilliardTablesService {
 
     await this.photos.save(photoEntities);
 
-    table.photos = [...(table.photos || []), ...photoEntities];
+    table.photos = this.sortPhotos([...(table.photos || []), ...photoEntities]);
 
     return table;
   }
 
   private async updateEntityPhotos(
     tableId: BilliardTableId,
-    photoIdsToDelete?: BilliardTablePhotoId[],
+    { photoIdsToDelete, orderedPhotoIds }: UpdateBilliardTablePhotosDto,
   ): Promise<BilliardTableEntity> {
-    const table = await this.getEntityById(tableId);
+    let table = await this.getEntityById(tableId);
 
     if (photoIdsToDelete?.length) {
-      const photosToDelete =
-        table.photos?.filter((photo) => photoIdsToDelete.includes(photo.id)) ||
-        [];
-
-      photosToDelete.map((photo) => {
-        const photoPath = getBilliardTablePhotoPath(
-          tableId,
-          photo.photoFilename,
-        );
-        this.storageClient.deleteFile({
-          bucket: BUCKET_NAME,
-          filename: photoPath,
-        });
-      });
-
-      await this.photos.remove(photosToDelete);
-
-      table.photos =
-        table.photos?.filter((photo) => !photoIdsToDelete.includes(photo.id)) ||
-        [];
+      table = await this.deletePhotosByIds(table, photoIdsToDelete);
     }
 
-    return await this.tables.save(table);
+    if (orderedPhotoIds?.length) {
+      table = await this.reorderEntityPhotos(tableId, orderedPhotoIds);
+    }
+
+    return table;
   }
 
   @CatchDatabaseError(
@@ -204,7 +218,8 @@ export class BilliardTablesService {
   ): Promise<BilliardTableEntity> {
     const table = await this.tables.findOne({
       where: { id },
-      relations: ['photos'],
+      relations: { photos: true },
+      order: { photos: { sortOrder: 'ASC', createdAt: 'ASC' } },
     });
 
     if (!table) {
@@ -222,17 +237,164 @@ export class BilliardTablesService {
     const table = await this.getEntityById(id);
 
     if (table.photos?.length) {
-      table.photos.map((photo) => {
-        const photoPath = getBilliardTablePhotoPath(id, photo.photoFilename);
-        this.storageClient.deleteFile({
-          bucket: BUCKET_NAME,
-          filename: photoPath,
-        });
-      });
+      await Promise.all(
+        table.photos.map((photo) =>
+          this.storageClient.deleteFile({
+            bucket: BUCKET_NAME,
+            filename: getBilliardTablePhotoPath(id, photo.photoFilename),
+          }),
+        ),
+      );
     }
 
     await this.tables.remove(table);
+
     return table;
+  }
+
+  private async deleteEntityPhotoById(
+    tableId: BilliardTableId,
+    photoId: BilliardTablePhotoId,
+  ): Promise<BilliardTableEntity> {
+    const table = await this.getEntityById(tableId);
+
+    await this.deletePhotosByIds(table, [photoId]);
+
+    return await this.getEntityById(tableId);
+  }
+
+  private async reorderEntityPhotos(
+    tableId: BilliardTableId,
+    orderedPhotoIds: BilliardTablePhotoId[],
+  ): Promise<BilliardTableEntity> {
+    const table = await this.getEntityById(tableId);
+    const currentPhotoIds = table.photos.map((photo) => photo.id);
+
+    this.validatePhotoOrder(currentPhotoIds, orderedPhotoIds);
+
+    const reorderedPhotos = orderedPhotoIds.map((photoId, index) => {
+      const photo = table.photos.find(({ id }) => id === photoId);
+
+      if (!photo) {
+        throw new NotFoundException(
+          `Photo with id '${photoId}' does not exist for table '${tableId}'`,
+        );
+      }
+
+      photo.sortOrder = index;
+
+      return photo;
+    });
+
+    await this.persistPhotoOrder(reorderedPhotos);
+
+    return await this.getEntityById(tableId);
+  }
+
+  private async deletePhotosByIds(
+    table: BilliardTableEntity,
+    photoIdsToDelete: BilliardTablePhotoId[],
+  ): Promise<BilliardTableEntity> {
+    const photosToDelete =
+      table.photos?.filter((photo) => photoIdsToDelete.includes(photo.id)) ||
+      [];
+
+    if (!photosToDelete.length) {
+      throw new NotFoundException(
+        `No photos with ids '${photoIdsToDelete.join(', ')}' were found for table '${table.id}'`,
+      );
+    }
+
+    const missingPhotoIds = photoIdsToDelete.filter(
+      (photoId) => !photosToDelete.some(({ id }) => id === photoId),
+    );
+
+    if (missingPhotoIds.length) {
+      throw new NotFoundException(
+        `Photos with ids '${missingPhotoIds.join(', ')}' were not found for table '${table.id}'`,
+      );
+    }
+
+    await Promise.all(
+      photosToDelete.map((photo) =>
+        this.storageClient.deleteFile({
+          bucket: BUCKET_NAME,
+          filename: getBilliardTablePhotoPath(table.id, photo.photoFilename),
+        }),
+      ),
+    );
+
+    const remainingPhotos = this.sortPhotos(
+      table.photos.filter((photo) => !photoIdsToDelete.includes(photo.id)),
+    );
+
+    const deleteResult = await this.photos.delete(
+      photosToDelete.map(({ id }) => id),
+    );
+
+    if (deleteResult.affected !== photosToDelete.length) {
+      throw new NotFoundException(
+        `Failed to delete all requested photos for table '${table.id}'`,
+      );
+    }
+
+    if (remainingPhotos.length) {
+      await this.persistPhotoOrder(remainingPhotos);
+    }
+
+    table.photos = remainingPhotos;
+
+    return table;
+  }
+
+  private async persistPhotoOrder(
+    photos: BilliardTablePhotoEntity[],
+  ): Promise<void> {
+    await this.photos.save(
+      photos.map((photo, index) => {
+        photo.sortOrder = index;
+        return photo;
+      }),
+    );
+  }
+
+  private sortPhotos(
+    photos: BilliardTablePhotoEntity[],
+  ): BilliardTablePhotoEntity[] {
+    return [...photos].sort((left, right) => {
+      if (left.sortOrder !== right.sortOrder) {
+        return left.sortOrder - right.sortOrder;
+      }
+
+      return this.getPhotoTimestamp(left) - this.getPhotoTimestamp(right);
+    });
+  }
+
+  private getPhotoTimestamp(photo: BilliardTablePhotoEntity): number {
+    return photo.createdAt instanceof Date ? photo.createdAt.getTime() : 0;
+  }
+
+  private validatePhotoOrder(
+    currentPhotoIds: BilliardTablePhotoId[],
+    orderedPhotoIds: BilliardTablePhotoId[],
+  ): void {
+    if (currentPhotoIds.length !== orderedPhotoIds.length) {
+      throw new BadRequestException(
+        'Photo reorder payload must contain all existing photo IDs exactly once',
+      );
+    }
+
+    const currentPhotoIdSet = new Set(currentPhotoIds);
+    const orderedPhotoIdSet = new Set(orderedPhotoIds);
+
+    if (
+      currentPhotoIdSet.size !== orderedPhotoIdSet.size ||
+      orderedPhotoIds.some((photoId) => !currentPhotoIdSet.has(photoId))
+    ) {
+      throw new BadRequestException(
+        'Photo reorder payload must contain all existing photo IDs exactly once',
+      );
+    }
   }
 
   private async mapTableEntityToDto(
@@ -244,7 +406,7 @@ export class BilliardTablesService {
 
     if (tableEntity.photos?.length) {
       tableDto.photos = await Promise.all(
-        tableEntity.photos.map(async (photo) => {
+        this.sortPhotos(tableEntity.photos).map(async (photo) => {
           const photoDto = plainToInstance(BilliardTablePhotoDto, photo, {
             excludeExtraneousValues: true,
           });

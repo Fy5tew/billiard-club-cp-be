@@ -206,7 +206,7 @@ export class IdentityService {
     });
 
     if (user.photoFilename) {
-      this.storageClient.deleteFile({
+      await this.storageClient.deleteFile({
         bucket: BUCKET_NAME,
         filename: user.photoFilename,
       });
