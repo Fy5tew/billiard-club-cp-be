@@ -17,6 +17,7 @@ import {
   CreateBilliardTableDto,
   CreateBilliardTablePhotoDto,
   ReorderBilliardTablePhotosDto,
+  SimplifiedBilliardTableDto,
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
 } from '@app/shared/dtos/billiard-table.dto';
@@ -99,6 +100,24 @@ export class BilliardTablesService {
     });
 
     return Promise.all(tables.map((table) => this.mapTableEntityToDto(table)));
+  }
+
+  async getTablesSimplified(): Promise<SimplifiedBilliardTableDto[]> {
+    const tables = await this.tables.find({
+      select: {
+        id: true,
+        title: true,
+      },
+      order: {
+        title: 'ASC',
+      },
+    });
+
+    return tables.map((table) =>
+      plainToInstance(SimplifiedBilliardTableDto, table, {
+        excludeExtraneousValues: true,
+      }),
+    );
   }
 
   async deleteById(id: BilliardTableId): Promise<BilliardTableDto> {

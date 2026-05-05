@@ -8,6 +8,7 @@ import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billi
 import { BookingClient } from '@app/shared/services/booking/booking.client';
 import { IdentityClient } from '@app/shared/services/identity/identity.client';
 import { Service } from '@app/shared/services/services.types';
+import { StatisticsClient } from '@app/shared/services/statistics/statistics.client';
 import { TournamentsClient } from '@app/shared/services/tournaments/tournaments.client';
 
 import { JwtAccessStrategy } from './auth/jwt-access.strategy';
@@ -16,6 +17,7 @@ import { AuthController } from './controllers/auth.controller';
 import { BilliardTablesController } from './controllers/billiard-tables.controller';
 import { BookingsController } from './controllers/bookings.controller';
 import { HomeController } from './controllers/home.controller';
+import { StatisticsController } from './controllers/statistics.controller';
 import { TournamentsController } from './controllers/tournaments.controller';
 import { UsersController } from './controllers/users.controller';
 
@@ -28,6 +30,7 @@ import { UsersController } from './controllers/users.controller';
     registerClient(Service.BILLIARD_TABLES),
     registerClient(Service.BOOKING),
     registerClient(Service.TOURNAMENTS),
+    registerClient(Service.STATISTICS),
   ],
   controllers: [
     HomeController,
@@ -35,6 +38,7 @@ import { UsersController } from './controllers/users.controller';
     UsersController,
     BilliardTablesController,
     BookingsController,
+    StatisticsController,
     TournamentsController,
   ],
   providers: [
@@ -42,6 +46,7 @@ import { UsersController } from './controllers/users.controller';
     BilliardTablesClient,
     BookingClient,
     TournamentsClient,
+    StatisticsClient,
     JwtAccessStrategy,
     JwtRefreshStrategy,
   ],

@@ -5,6 +5,7 @@ import {
   BilliardTableDto,
   CreateBilliardTableDto,
   ReorderBilliardTablePhotosDto,
+  SimplifiedBilliardTableDto,
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
 } from '@app/shared/dtos/billiard-table.dto';
@@ -31,6 +32,11 @@ export class BilliardTablesController {
   @MessagePattern(BilliardTablesMessage.GET_TABLES)
   async getTables(): Promise<BilliardTableDto[]> {
     return this.billiardTablesService.getTables();
+  }
+
+  @MessagePattern(BilliardTablesMessage.GET_TABLES_SIMPLIFIED)
+  async getTablesSimplified(): Promise<SimplifiedBilliardTableDto[]> {
+    return this.billiardTablesService.getTablesSimplified();
   }
 
   @MessagePattern(BilliardTablesMessage.GET_BY_ID)

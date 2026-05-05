@@ -39,6 +39,15 @@
         "tsConfigPath": "apps/tournaments/tsconfig.app.json"
       }
     },
+    "statistics": {
+      "type": "application",
+      "root": "apps/statistics",
+      "entryFile": "main",
+      "sourceRoot": "apps/statistics/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/statistics/tsconfig.app.json"
+      }
+    },
     "identity": {
       "type": "application",
       "root": "apps/identity",

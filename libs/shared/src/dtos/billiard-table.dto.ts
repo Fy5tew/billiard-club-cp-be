@@ -99,6 +99,11 @@ export class BilliardTableDto {
   photos: BilliardTablePhotoDto[];
 }
 
+export class SimplifiedBilliardTableDto extends PickType(BilliardTableDto, [
+  'id',
+  'title',
+]) {}
+
 export class CreateBilliardTableDto extends OmitType(BilliardTableDto, [
   'id',
   'photos',

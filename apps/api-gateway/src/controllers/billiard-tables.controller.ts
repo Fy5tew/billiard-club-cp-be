@@ -26,6 +26,7 @@ import {
   BilliardTableDto,
   CreateBilliardTableDto,
   ReorderBilliardTablePhotosDto,
+  SimplifiedBilliardTableDto,
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
   UpdateBilliardTableStatusDto,
@@ -89,6 +90,27 @@ export class BilliardTablesController {
   @Get()
   async getTables(): Promise<BilliardTableDto[]> {
     return this.billiardTablesClient.getTables();
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all billiard tables simplified' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Retrieved all billiard tables simplified successfully',
+    type: [SimplifiedBilliardTableDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Access token not provided or expired',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions',
+  })
+  @RoleAccess(UserRole.Manager)
+  @Get(BilliardTablesRoute.SIMPLIFIED)
+  async getTablesSimplified(): Promise<SimplifiedBilliardTableDto[]> {
+    return this.billiardTablesClient.getTablesSimplified();
   }
 
   @ApiOperation({ summary: 'Get billiard table by ID' })

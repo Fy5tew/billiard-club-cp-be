@@ -7,6 +7,7 @@ import { BilliardTablesMessage } from './billiard-tables.messages';
 import {
   BilliardTableDto,
   CreateBilliardTableDto,
+  SimplifiedBilliardTableDto,
   UpdateBilliardTableDto,
   UpdateBilliardTablePhotosDto,
   BilliardTableId,
@@ -34,6 +35,15 @@ export class BilliardTablesClient {
     return firstValueFrom(
       this.client.send<BilliardTableDto[], object>(
         BilliardTablesMessage.GET_TABLES,
+        {},
+      ),
+    );
+  }
+
+  async getTablesSimplified(): Promise<SimplifiedBilliardTableDto[]> {
+    return firstValueFrom(
+      this.client.send<SimplifiedBilliardTableDto[], object>(
+        BilliardTablesMessage.GET_TABLES_SIMPLIFIED,
         {},
       ),
     );
