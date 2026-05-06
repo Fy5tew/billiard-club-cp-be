@@ -116,7 +116,13 @@ Key service sources:
 ### Booking rules
 
 - `startTime` must be in the future.
+- `startTime` can be created only for today or the next 7 days.
 - `startTime` must be before `endTime`.
+- Booking duration must be between 30 minutes and 5 hours.
+- Booking start and end must align with 15-minute slot boundaries.
+- Booking time must stay within club working hours:
+  - from `09:00`
+  - to `24:00`
 - User and table must exist.
 - Overlapping active bookings are blocked.
 - Overlap check excludes statuses:

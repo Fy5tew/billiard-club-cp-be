@@ -22,6 +22,19 @@ import {
 import type { UserId } from '@app/shared/dtos/user.dto';
 import { BookingEntity } from '@app/shared/entities/booking.entity';
 
+import {
+  BOOKING_DAYS_AHEAD,
+  BOOKING_MAX_DURATION_HOURS,
+  BOOKING_MAX_DURATION_MINUTES,
+  BOOKING_MIN_DURATION_MINUTES,
+  BOOKING_SLOT_STEP_MINUTES,
+  BOOKING_WORK_END_MINUTES,
+  BOOKING_WORK_START_MINUTES,
+  BUSINESS_TIMEZONE_OFFSET_HOURS,
+  HOUR_IN_MS,
+  MINUTE_IN_MS,
+} from './booking.constants';
+
 @Injectable()
 export class BookingService {
   constructor(
@@ -34,25 +47,27 @@ export class BookingService {
     data: CreateBookingDto,
     context: CreateBookingContextDto,
   ): Promise<BookingDto> {
-    const currentDate = new Date();
-    currentDate.setHours(currentDate.getHours() + 3);
-
     const { billiardTableId, startTime, endTime } = data;
+    const currentDate = this.getCurrentBusinessClockDate();
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
 
-    if (new Date(startTime) <= currentDate) {
+    if (startDate <= currentDate) {
       throw new BadRequestException('Start time must be in the future');
     }
 
-    if (new Date(startTime) >= new Date(endTime)) {
+    if (startDate >= endDate) {
       throw new BadRequestException('Start time must be before end time');
     }
+
+    this.validateBookingTimeRange(currentDate, startDate, endDate);
 
     const overlappingBooking = await this.bookings.findOne({
       where: {
         billiardTableId,
         status: Not(In([BookingStatus.Cancelled, BookingStatus.Rejected])),
-        startTime: LessThan(new Date(endTime)),
-        endTime: MoreThan(new Date(startTime)),
+        startTime: LessThan(endDate),
+        endTime: MoreThan(startDate),
       },
     });
 
@@ -63,15 +78,14 @@ export class BookingService {
     }
 
     const durationHours =
-      (new Date(endTime).getTime() - new Date(startTime).getTime()) /
-      (1000 * 60 * 60);
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
     const totalCost = durationHours * Number(context.hourlyPrice);
 
     const entity = this.bookings.create({
       userId,
       billiardTableId,
-      startTime,
-      endTime,
+      startTime: startDate,
+      endTime: endDate,
       totalCost,
       status: BookingStatus.Pending,
     });
@@ -184,6 +198,63 @@ export class BookingService {
     throw new BadRequestException(
       `Invalid status transition from ${BookingStatus[current]} to ${BookingStatus[next]}`,
     );
+  }
+
+  private getCurrentBusinessClockDate(): Date {
+    return new Date(Date.now() + BUSINESS_TIMEZONE_OFFSET_HOURS * HOUR_IN_MS);
+  }
+
+  private validateBookingTimeRange(
+    currentDate: Date,
+    startDate: Date,
+    endDate: Date,
+  ): void {
+    const maxBookingDate = new Date(currentDate);
+    maxBookingDate.setUTCDate(maxBookingDate.getUTCDate() + BOOKING_DAYS_AHEAD);
+    maxBookingDate.setUTCHours(23, 59, 59, 999);
+
+    if (startDate > maxBookingDate) {
+      throw new BadRequestException(
+        `Booking can be created only up to ${BOOKING_DAYS_AHEAD} days ahead`,
+      );
+    }
+
+    const bookingDayStart = new Date(startDate);
+    bookingDayStart.setUTCHours(0, 0, 0, 0);
+
+    const startMinutes =
+      (startDate.getTime() - bookingDayStart.getTime()) / MINUTE_IN_MS;
+    const endMinutes =
+      (endDate.getTime() - bookingDayStart.getTime()) / MINUTE_IN_MS;
+    const durationMinutes =
+      (endDate.getTime() - startDate.getTime()) / MINUTE_IN_MS;
+
+    if (
+      startMinutes % BOOKING_SLOT_STEP_MINUTES !== 0 ||
+      endMinutes % BOOKING_SLOT_STEP_MINUTES !== 0
+    ) {
+      throw new BadRequestException(
+        `Booking time must align with ${BOOKING_SLOT_STEP_MINUTES}-minute slots`,
+      );
+    }
+
+    if (
+      durationMinutes < BOOKING_MIN_DURATION_MINUTES ||
+      durationMinutes > BOOKING_MAX_DURATION_MINUTES
+    ) {
+      throw new BadRequestException(
+        `Booking duration must be between ${BOOKING_MIN_DURATION_MINUTES} minutes and ${BOOKING_MAX_DURATION_HOURS} hours`,
+      );
+    }
+
+    if (
+      startMinutes < BOOKING_WORK_START_MINUTES ||
+      endMinutes > BOOKING_WORK_END_MINUTES
+    ) {
+      throw new BadRequestException(
+        `Booking time must be within club working hours (${BOOKING_WORK_START_MINUTES / 60}:00-${BOOKING_WORK_END_MINUTES / 60}:00)`,
+      );
+    }
   }
 
   private async getEntityById(id: BookingId): Promise<BookingEntity> {
