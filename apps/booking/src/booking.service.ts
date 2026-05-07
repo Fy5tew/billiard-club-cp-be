@@ -6,7 +6,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
-import { Between, In, LessThan, MoreThan, Not, Repository } from 'typeorm';
+import {
+  Between,
+  In,
+  LessThan,
+  LessThanOrEqual,
+  MoreThan,
+  Not,
+  Repository,
+} from 'typeorm';
 
 import type { BilliardTableId } from '@app/shared/dtos/billiard-table.dto';
 import {
@@ -198,15 +206,15 @@ export class BookingService {
   }
 
   async getUpcomingBookings(): Promise<BookingDto[]> {
-    const currentDate = new Date();
-    currentDate.setHours(currentDate.getHours() + 3);
+    const currentDate = this.getCurrentBusinessClockDate();
     const endOfCurrentDay = new Date(currentDate);
     endOfCurrentDay.setHours(23, 59, 59, 999);
 
     const entities = await this.bookings.find({
       where: {
         status: In([BookingStatus.Confirmed, BookingStatus.Paid]),
-        endTime: Between(currentDate, endOfCurrentDay),
+        startTime: LessThanOrEqual(endOfCurrentDay),
+        endTime: MoreThan(currentDate),
       },
       order: { startTime: 'ASC' },
     });
