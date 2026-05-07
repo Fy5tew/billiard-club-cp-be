@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import {
+  IsArray,
   IsDate,
   IsEnum,
   IsNumber,
@@ -10,7 +11,11 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { BilliardTableDto, type BilliardTableId } from './billiard-table.dto';
+import {
+  BilliardTableDto,
+  BilliardTableType,
+  type BilliardTableId,
+} from './billiard-table.dto';
 import { UserDto, type UserId } from './user.dto';
 
 export type BookingId = string;
@@ -213,7 +218,71 @@ export class CreateBookingManualDto {
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002' })
   @Expose()
-  userId: BilliardTableId;
+  userId: UserId;
+
+  @ApiProperty({ example: '2024-05-20T14:00:00Z' })
+  @Expose()
+  @IsDate()
+  @Type(() => Date)
+  startTime: Date;
+
+  @ApiProperty({ example: '2024-05-20T16:00:00Z' })
+  @Expose()
+  @IsDate()
+  @Type(() => Date)
+  endTime: Date;
+}
+
+export class GetAvailableBilliardTablesDto {
+  @ApiProperty({ enum: BilliardTableType, enumName: 'BilliardTableType' })
+  @Expose()
+  @IsEnum(BilliardTableType)
+  type: BilliardTableType;
+
+  @ApiProperty({ example: '2024-05-20T14:00:00Z' })
+  @Expose()
+  @IsDate()
+  @Type(() => Date)
+  startTime: Date;
+
+  @ApiProperty({ example: '2024-05-20T16:00:00Z' })
+  @Expose()
+  @IsDate()
+  @Type(() => Date)
+  endTime: Date;
+}
+
+export class AvailableBilliardTableDto {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002' })
+  @Expose()
+  id: BilliardTableId;
+
+  @ApiProperty({ example: 'Table 1' })
+  @Expose()
+  title: string;
+
+  @ApiProperty({ enum: BilliardTableType, enumName: 'BilliardTableType' })
+  @Expose()
+  @IsEnum(BilliardTableType)
+  type: BilliardTableType;
+
+  @ApiProperty({ example: 600 })
+  @Expose()
+  @IsNumber()
+  hourlyPrice: number;
+
+  @ApiProperty({ example: 1200 })
+  @Expose()
+  @IsNumber()
+  totalCost: number;
+}
+
+export class GetBusyBilliardTableIdsInRangeDto {
+  @ApiProperty({ type: 'string', isArray: true })
+  @Expose()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  tableIds: BilliardTableId[];
 
   @ApiProperty({ example: '2024-05-20T14:00:00Z' })
   @Expose()

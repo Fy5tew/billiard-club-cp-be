@@ -27,6 +27,7 @@ import {
   UpdateBookingStatusDto,
   GetBookedSlotsDto,
   BookedSlotDto,
+  GetBusyBilliardTableIdsInRangeDto,
 } from '@app/shared/dtos/booking.dto';
 import type { UserId } from '@app/shared/dtos/user.dto';
 import { BookingEntity } from '@app/shared/entities/booking.entity';
@@ -61,15 +62,7 @@ export class BookingService {
     const startDate = new Date(startTime);
     const endDate = new Date(endTime);
 
-    if (startDate <= currentDate) {
-      throw new BadRequestException('Start time must be in the future');
-    }
-
-    if (startDate >= endDate) {
-      throw new BadRequestException('Start time must be before end time');
-    }
-
-    this.validateBookingTimeRange(currentDate, startDate, endDate);
+    this.validateBookingCreateTime(currentDate, startDate, endDate);
 
     const overlappingBooking = await this.bookings.findOne({
       where: {
@@ -138,6 +131,37 @@ export class BookingService {
       start: b.startTime,
       end: b.endTime,
     }));
+  }
+
+  async getBusyBilliardTableIdsInRange({
+    tableIds,
+    startTime,
+    endTime,
+  }: GetBusyBilliardTableIdsInRangeDto): Promise<BilliardTableId[]> {
+    const currentDate = this.getCurrentBusinessClockDate();
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+
+    this.validateBookingCreateTime(currentDate, startDate, endDate);
+
+    if (!tableIds.length) {
+      return [];
+    }
+
+    const rows = await this.bookings
+      .createQueryBuilder('booking')
+      .select('DISTINCT booking.billiardTableId', 'billiardTableId')
+      .where('booking.billiardTableId IN (:...tableIds)', { tableIds })
+      .andWhere('booking.status NOT IN (:...excludedStatuses)', {
+        excludedStatuses: [BookingStatus.Cancelled, BookingStatus.Rejected],
+      })
+      .andWhere('booking.startTime < :endTime', { endTime: endDate })
+      .andWhere('booking.endTime > :startTime', { startTime: startDate })
+      .getRawMany<{ billiardTableId: BilliardTableId | null }>();
+
+    return rows.flatMap(({ billiardTableId }) =>
+      billiardTableId ? [billiardTableId] : [],
+    );
   }
 
   async getBookings(query: GetBookingsQueryDto = {}): Promise<BookingDto[]> {
@@ -322,6 +346,22 @@ export class BookingService {
         `Booking time must be within club working hours (${BOOKING_WORK_START_MINUTES / 60}:00-${BOOKING_WORK_END_MINUTES / 60}:00)`,
       );
     }
+  }
+
+  private validateBookingCreateTime(
+    currentDate: Date,
+    startDate: Date,
+    endDate: Date,
+  ): void {
+    if (startDate <= currentDate) {
+      throw new BadRequestException('Start time must be in the future');
+    }
+
+    if (startDate >= endDate) {
+      throw new BadRequestException('Start time must be before end time');
+    }
+
+    this.validateBookingTimeRange(currentDate, startDate, endDate);
   }
 
   private async getEntityById(id: BookingId): Promise<BookingEntity> {

@@ -19,14 +19,19 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import type { BilliardTableId } from '@app/shared/dtos/billiard-table.dto';
 import {
+  BilliardTableStatus,
+  type BilliardTableId,
+} from '@app/shared/dtos/billiard-table.dto';
+import {
+  AvailableBilliardTableDto,
   BookingDto,
   BookingFullDto,
   type BookingId,
   BookingStatus,
   CreateBookingContextDto,
   CreateBookingDto,
+  GetAvailableBilliardTablesDto,
   GetBookingsQueryDto,
   BookedSlotDto,
   CreateBookingManualDto,
@@ -142,6 +147,40 @@ export class BookingsController {
   }
 
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get available billiard tables for time range' })
+  @ApiResponse({ status: HttpStatus.OK, type: [AvailableBilliardTableDto] })
+  @RoleAccess(UserRole.User)
+  @Get(BookingsRoute.AVAILABLE_TABLES)
+  async getAvailableTables(
+    @Query() query: GetAvailableBilliardTablesDto,
+  ): Promise<AvailableBilliardTableDto[]> {
+    const { type, startTime, endTime } = query;
+    const tables = await this.billiardTablesClient.getTables({
+      type,
+      status: BilliardTableStatus.Available,
+    });
+    const tableIds = tables.map(({ id }) => id);
+    const busyTableIds = new Set(
+      await this.bookingClient.getBusyBilliardTableIdsInRange({
+        tableIds,
+        startTime,
+        endTime,
+      }),
+    );
+    const durationHours = this.getBookingDurationHours(startTime, endTime);
+
+    return tables
+      .filter(({ id }) => !busyTableIds.has(id))
+      .map(({ id, title, type, hourlyPrice }) => ({
+        id,
+        title,
+        type,
+        hourlyPrice: Number(hourlyPrice),
+        totalCost: durationHours * Number(hourlyPrice),
+      }));
+  }
+
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user bookings' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -162,8 +201,12 @@ export class BookingsController {
   @ApiResponse({ status: HttpStatus.OK, type: BookingFullDto })
   @RoleAccess(UserRole.User)
   @Get(BookingsRoute.BOOKING)
-  async getById(@Param('id') id: BookingId): Promise<BookingFullDto> {
+  async getById(
+    @Param('id') id: BookingId,
+    @Req() { user }: RequestWithUser,
+  ): Promise<BookingFullDto> {
     const booking = await this.bookingClient.getById(id);
+    this.checkReadAccess(booking, user.id, user.role);
     return this.mapToFull(booking);
   }
 
@@ -333,6 +376,26 @@ export class BookingsController {
         'You do not have permission to modify this booking',
       );
     }
+  }
+
+  private checkReadAccess(
+    booking: BookingDto,
+    currentUserId: UserId,
+    currentUserRole: UserRole,
+  ): void {
+    if (currentUserRole > UserRole.User) {
+      return;
+    }
+
+    if (booking.userId !== currentUserId) {
+      throw new ForbiddenException(
+        'You do not have permission to view this booking',
+      );
+    }
+  }
+
+  private getBookingDurationHours(startTime: Date, endTime: Date): number {
+    return (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
   }
 
   private async createBooking(

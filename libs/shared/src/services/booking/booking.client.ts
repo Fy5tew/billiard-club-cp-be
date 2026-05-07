@@ -10,6 +10,7 @@ import {
   BookingId,
   CreateBookingContextDto,
   CreateBookingDto,
+  GetBusyBilliardTableIdsInRangeDto,
   GetBookingsQueryDto,
   GetBookedSlotsDto,
   UpdateBookingStatusDto,
@@ -54,6 +55,17 @@ export class BookingClient {
       this.client.send<BookedSlotDto[], [BilliardTableId, GetBookedSlotsDto]>(
         BookingMessage.GET_BOOKED_SLOTS_BY_BILLIARD_TABLE,
         [tableId, query],
+      ),
+    );
+  }
+
+  async getBusyBilliardTableIdsInRange(
+    query: GetBusyBilliardTableIdsInRangeDto,
+  ): Promise<BilliardTableId[]> {
+    return firstValueFrom(
+      this.client.send<BilliardTableId[], GetBusyBilliardTableIdsInRangeDto>(
+        BookingMessage.GET_BUSY_BILLIARD_TABLE_IDS_IN_RANGE,
+        query,
       ),
     );
   }

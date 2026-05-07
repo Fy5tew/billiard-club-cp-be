@@ -6,6 +6,7 @@ import {
   BookingDto,
   CreateBookingContextDto,
   CreateBookingDto,
+  GetBusyBilliardTableIdsInRangeDto,
   GetBookingsQueryDto,
   UpdateBookingStatusDto,
 } from '@app/shared/dtos/booking.dto';
@@ -50,6 +51,13 @@ export class BookingController {
       tableId,
       query,
     );
+  }
+
+  @MessagePattern(BookingMessage.GET_BUSY_BILLIARD_TABLE_IDS_IN_RANGE)
+  async getBusyBilliardTableIdsInRange(
+    @Payload() query: GetBusyBilliardTableIdsInRangeDto,
+  ): Promise<BilliardTableId[]> {
+    return await this.bookingService.getBusyBilliardTableIdsInRange(query);
   }
 
   @MessagePattern(BookingMessage.GET_BOOKINGS)
