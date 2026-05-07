@@ -1,5 +1,6 @@
 import {
   Body,
+  Query,
   Controller,
   Delete,
   Get,
@@ -25,6 +26,7 @@ import {
 import {
   BilliardTableDto,
   CreateBilliardTableDto,
+  GetBilliardTablesQueryDto,
   ReorderBilliardTablePhotosDto,
   SimplifiedBilliardTableDto,
   UpdateBilliardTableDto,
@@ -88,8 +90,10 @@ export class BilliardTablesController {
   })
   @PublicRoute()
   @Get()
-  async getTables(): Promise<BilliardTableDto[]> {
-    return this.billiardTablesClient.getTables();
+  async getTables(
+    @Query() query: GetBilliardTablesQueryDto,
+  ): Promise<BilliardTableDto[]> {
+    return this.billiardTablesClient.getTables(query);
   }
 
   @ApiBearerAuth()

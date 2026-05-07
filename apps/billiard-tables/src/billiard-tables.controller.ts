@@ -4,6 +4,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   BilliardTableDto,
   CreateBilliardTableDto,
+  GetBilliardTablesQueryDto,
   ReorderBilliardTablePhotosDto,
   SimplifiedBilliardTableDto,
   UpdateBilliardTableDto,
@@ -30,8 +31,10 @@ export class BilliardTablesController {
   }
 
   @MessagePattern(BilliardTablesMessage.GET_TABLES)
-  async getTables(): Promise<BilliardTableDto[]> {
-    return this.billiardTablesService.getTables();
+  async getTables(
+    @Payload() query: GetBilliardTablesQueryDto,
+  ): Promise<BilliardTableDto[]> {
+    return this.billiardTablesService.getTables(query);
   }
 
   @MessagePattern(BilliardTablesMessage.GET_TABLES_SIMPLIFIED)

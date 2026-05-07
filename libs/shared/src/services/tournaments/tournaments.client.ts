@@ -10,6 +10,7 @@ import {
 } from '../../dtos/tournament-registration.dto';
 import {
   TournamentDto,
+  GetTournamentsQueryDto,
   TournamentId,
   CreateTournamentDto,
   UpdateTournamentDto,
@@ -53,11 +54,11 @@ export class TournamentsClient {
     );
   }
 
-  async getList(): Promise<TournamentDto[]> {
+  async getList(query: GetTournamentsQueryDto = {}): Promise<TournamentDto[]> {
     return firstValueFrom(
-      this.client.send<TournamentDto[], object>(
+      this.client.send<TournamentDto[], GetTournamentsQueryDto>(
         TournamentsMessage.GET_LIST,
-        {},
+        query,
       ),
     );
   }
@@ -71,11 +72,13 @@ export class TournamentsClient {
     );
   }
 
-  async getListPrivate(): Promise<TournamentDto[]> {
+  async getListPrivate(
+    query: GetTournamentsQueryDto = {},
+  ): Promise<TournamentDto[]> {
     return firstValueFrom(
-      this.client.send<TournamentDto[], object>(
+      this.client.send<TournamentDto[], GetTournamentsQueryDto>(
         TournamentsMessage.GET_LIST_PRIVATE,
-        {},
+        query,
       ),
     );
   }

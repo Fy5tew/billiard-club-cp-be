@@ -16,6 +16,7 @@ import {
   BilliardTablePhotoId,
   CreateBilliardTableDto,
   CreateBilliardTablePhotoDto,
+  GetBilliardTablesQueryDto,
   ReorderBilliardTablePhotosDto,
   SimplifiedBilliardTableDto,
   UpdateBilliardTableDto,
@@ -93,11 +94,38 @@ export class BilliardTablesService {
     return await this.mapTableEntityToDto(await this.getEntityById(id));
   }
 
-  async getTables(): Promise<BilliardTableDto[]> {
-    const tables = await this.tables.find({
-      relations: { photos: true },
-      order: { photos: { sortOrder: 'ASC', createdAt: 'ASC' } },
-    });
+  async getTables(
+    query: GetBilliardTablesQueryDto = {},
+  ): Promise<BilliardTableDto[]> {
+    this.validateHourlyPriceRange(query);
+
+    const tables = await this.tables
+      .createQueryBuilder('table')
+      .leftJoinAndSelect('table.photos', 'photo')
+      .where(query.search ? 'table.title ILIKE :search' : '1 = 1', {
+        search: query.search ? `%${query.search.trim()}%` : undefined,
+      })
+      .andWhere(query.status ? 'table.status = :status' : '1 = 1', {
+        status: query.status,
+      })
+      .andWhere(query.type ? 'table.type = :type' : '1 = 1', {
+        type: query.type,
+      })
+      .andWhere(
+        query.minHourlyPrice !== undefined
+          ? 'table.hourlyPrice >= :minHourlyPrice'
+          : '1 = 1',
+        { minHourlyPrice: query.minHourlyPrice },
+      )
+      .andWhere(
+        query.maxHourlyPrice !== undefined
+          ? 'table.hourlyPrice <= :maxHourlyPrice'
+          : '1 = 1',
+        { maxHourlyPrice: query.maxHourlyPrice },
+      )
+      .orderBy('photo.sortOrder', 'ASC')
+      .addOrderBy('photo.createdAt', 'ASC')
+      .getMany();
 
     return Promise.all(tables.map((table) => this.mapTableEntityToDto(table)));
   }
@@ -446,5 +474,20 @@ export class BilliardTablesService {
     }
 
     return tableDto;
+  }
+
+  private validateHourlyPriceRange({
+    minHourlyPrice,
+    maxHourlyPrice,
+  }: GetBilliardTablesQueryDto): void {
+    if (
+      minHourlyPrice !== undefined &&
+      maxHourlyPrice !== undefined &&
+      minHourlyPrice > maxHourlyPrice
+    ) {
+      throw new BadRequestException(
+        'minHourlyPrice cannot be greater than maxHourlyPrice',
+      );
+    }
   }
 }

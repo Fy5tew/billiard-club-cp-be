@@ -17,6 +17,7 @@ import { LoginDto, TokensDto } from '@app/shared/dtos/auth.dto';
 import { EmailContentType } from '@app/shared/dtos/notification.dto';
 import type {
   CreateUserDto,
+  GetUsersQueryDto,
   SimplifiedUserDto,
   UpdateUserDto,
   UpdateUserPhotoDto,
@@ -141,8 +142,38 @@ export class IdentityService {
     return null;
   }
 
-  async getUsers(): Promise<UserDto[]> {
-    const users = await this.users.find();
+  async getUsers(query: GetUsersQueryDto = {}): Promise<UserDto[]> {
+    const queryBuilder = this.users.createQueryBuilder('user');
+
+    if (query.name) {
+      queryBuilder.andWhere('user.name ILIKE :name', {
+        name: `%${query.name.trim()}%`,
+      });
+    }
+
+    if (query.surname) {
+      queryBuilder.andWhere('user.surname ILIKE :surname', {
+        surname: `%${query.surname.trim()}%`,
+      });
+    }
+
+    if (query.email) {
+      queryBuilder.andWhere('user.email ILIKE :email', {
+        email: `%${query.email.trim()}%`,
+      });
+    }
+
+    if (query.role !== undefined) {
+      queryBuilder.andWhere('user.role = :role', { role: query.role });
+    }
+
+    if (query.status !== undefined) {
+      queryBuilder.andWhere('user.status = :status', {
+        status: query.status,
+      });
+    }
+
+    const users = await queryBuilder.getMany();
 
     return Promise.all(users.map((user) => this.mapUserEntityToDto(user)));
   }

@@ -27,10 +27,11 @@ import {
   BookingStatus,
   CreateBookingContextDto,
   CreateBookingDto,
-  UpdateBookingStatusDto,
-  GetBookedSlotsDto,
+  GetBookingsQueryDto,
   BookedSlotDto,
   CreateBookingManualDto,
+  GetBookedSlotsDto,
+  UpdateBookingStatusDto,
 } from '@app/shared/dtos/booking.dto';
 import { UserRole, type UserId } from '@app/shared/dtos/user.dto';
 import { BilliardTablesClient } from '@app/shared/services/billiard-tables/billiard-tables.client';
@@ -55,8 +56,8 @@ export class BookingsController {
   @ApiResponse({ status: HttpStatus.OK, type: [BookingDto] })
   @RoleAccess(UserRole.Manager)
   @Get()
-  async getAll(): Promise<BookingFullDto[]> {
-    const bookings = await this.bookingClient.getBookings();
+  async getAll(@Query() query: GetBookingsQueryDto): Promise<BookingFullDto[]> {
+    const bookings = await this.bookingClient.getBookings(query);
     return this.mapToFullMany(bookings);
   }
 

@@ -1,5 +1,6 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   ArrayUnique,
   IsArray,
@@ -103,6 +104,37 @@ export class SimplifiedBilliardTableDto extends PickType(BilliardTableDto, [
   'id',
   'title',
 ]) {}
+
+export class GetBilliardTablesQueryDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiProperty({ enum: BilliardTableStatus, required: false })
+  @IsOptional()
+  @IsEnum(BilliardTableStatus)
+  status?: BilliardTableStatus;
+
+  @ApiProperty({ enum: BilliardTableType, required: false })
+  @IsOptional()
+  @IsEnum(BilliardTableType)
+  type?: BilliardTableType;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  minHourlyPrice?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  maxHourlyPrice?: number;
+}
 
 export class CreateBilliardTableDto extends OmitType(BilliardTableDto, [
   'id',

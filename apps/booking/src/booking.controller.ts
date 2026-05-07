@@ -6,6 +6,7 @@ import {
   BookingDto,
   CreateBookingContextDto,
   CreateBookingDto,
+  GetBookingsQueryDto,
   UpdateBookingStatusDto,
 } from '@app/shared/dtos/booking.dto';
 import type {
@@ -52,8 +53,10 @@ export class BookingController {
   }
 
   @MessagePattern(BookingMessage.GET_BOOKINGS)
-  async getBookings(): Promise<BookingDto[]> {
-    return await this.bookingService.getBookings();
+  async getBookings(
+    @Payload() query: GetBookingsQueryDto,
+  ): Promise<BookingDto[]> {
+    return await this.bookingService.getBookings(query);
   }
 
   @MessagePattern(BookingMessage.GET_UPCOMING_BOOKINGS)

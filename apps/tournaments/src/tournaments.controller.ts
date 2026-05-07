@@ -9,6 +9,7 @@ import type { TournamentRegistrationId } from '@app/shared/dtos/tournament-regis
 import {
   TournamentDto,
   CreateTournamentDto,
+  GetTournamentsQueryDto,
   UpdateTournamentDto,
 } from '@app/shared/dtos/tournament.dto';
 import type { TournamentId } from '@app/shared/dtos/tournament.dto';
@@ -39,8 +40,10 @@ export class TournamentsController {
   }
 
   @MessagePattern(TournamentsMessage.GET_LIST)
-  async getList(): Promise<TournamentDto[]> {
-    return this.tournamentsService.getList();
+  async getList(
+    @Payload() query: GetTournamentsQueryDto,
+  ): Promise<TournamentDto[]> {
+    return this.tournamentsService.getList(query);
   }
 
   @MessagePattern(TournamentsMessage.GET_BY_ID_PRIVATE)
@@ -49,8 +52,10 @@ export class TournamentsController {
   }
 
   @MessagePattern(TournamentsMessage.GET_LIST_PRIVATE)
-  async getListPrivate(): Promise<TournamentDto[]> {
-    return this.tournamentsService.getListPrivate();
+  async getListPrivate(
+    @Payload() query: GetTournamentsQueryDto,
+  ): Promise<TournamentDto[]> {
+    return this.tournamentsService.getListPrivate(query);
   }
 
   @MessagePattern(TournamentsMessage.PUBLISH_BY_ID)

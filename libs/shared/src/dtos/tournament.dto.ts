@@ -1,4 +1,4 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import {
   IsDate,
@@ -104,6 +104,60 @@ export class TournamentDto {
   @IsDate()
   @Type(() => Date)
   publishedAt: Date | null;
+}
+
+export class GetTournamentsQueryDto {
+  @ApiPropertyOptional({ required: false })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({
+    enum: TournamentStatus,
+    enumName: 'TournamentStatus',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsEnum(TournamentStatus)
+  status?: TournamentStatus;
+
+  @ApiPropertyOptional({ example: '2026-05-20T00:00:00.000Z' })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  startDateFrom?: Date;
+
+  @ApiPropertyOptional({ example: '2026-05-20T23:59:59.999Z' })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  startDateTo?: Date;
+
+  @ApiPropertyOptional({ example: '2026-05-18T00:00:00.000Z' })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  registrationDeadlineFrom?: Date;
+
+  @ApiPropertyOptional({ example: '2026-05-18T23:59:59.999Z' })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  registrationDeadlineTo?: Date;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  minEntryFee?: number;
+
+  @ApiPropertyOptional({ example: 50 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  maxEntryFee?: number;
 }
 
 export class CreateTournamentDto {

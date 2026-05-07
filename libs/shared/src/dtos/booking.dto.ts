@@ -1,10 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import {
   IsDate,
   IsEnum,
   IsNumber,
+  IsOptional,
   IsUUID,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -121,6 +123,62 @@ export class BookingFullDto {
   @IsDate()
   @Type(() => Date)
   updatedAt: Date;
+}
+
+export class GetBookingsQueryDto {
+  @ApiPropertyOptional({ enum: BookingStatus, enumName: 'BookingStatus' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsEnum(BookingStatus)
+  status?: BookingStatus;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440002' })
+  @IsOptional()
+  @IsUUID()
+  userId?: UserId;
+
+  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440002' })
+  @IsOptional()
+  @IsUUID()
+  billiardTableId?: BilliardTableId;
+
+  @ApiPropertyOptional({ example: '2026-05-20T00:00:00.000Z' })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  startDateFrom?: Date;
+
+  @ApiPropertyOptional({ example: '2026-05-20T23:59:59.999Z' })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  startDateTo?: Date;
+
+  @ApiPropertyOptional({ example: '2026-05-20T00:00:00.000Z' })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  createdFrom?: Date;
+
+  @ApiPropertyOptional({ example: '2026-05-20T23:59:59.999Z' })
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  createdTo?: Date;
+
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  minTotalCost?: number;
+
+  @ApiPropertyOptional({ example: 120 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  maxTotalCost?: number;
 }
 
 export class CreateBookingDto {

@@ -19,6 +19,7 @@ import {
   TournamentId,
   TournamentStatus,
   CreateTournamentDto,
+  GetTournamentsQueryDto,
   UpdateTournamentDto,
 } from '@app/shared/dtos/tournament.dto';
 import type { UserId } from '@app/shared/dtos/user.dto';
@@ -107,21 +108,8 @@ export class TournamentsService {
     );
   }
 
-  async getList(): Promise<TournamentDto[]> {
-    const entities = await this.tournaments.find({
-      where: {
-        status: In([
-          TournamentStatus.Published,
-          TournamentStatus.RegistrationClosed,
-          TournamentStatus.InProgress,
-          TournamentStatus.Completed,
-          TournamentStatus.Cancelled,
-        ]),
-      },
-      order: {
-        startAt: 'ASC',
-      },
-    });
+  async getList(query: GetTournamentsQueryDto = {}): Promise<TournamentDto[]> {
+    const entities = await this.buildListQuery(query, true).getMany();
 
     return entities.map((entity) => this.mapTournamentToDto(entity));
   }
@@ -132,12 +120,10 @@ export class TournamentsService {
     );
   }
 
-  async getListPrivate(): Promise<TournamentDto[]> {
-    const entities = await this.tournaments.find({
-      order: {
-        startAt: 'ASC',
-      },
-    });
+  async getListPrivate(
+    query: GetTournamentsQueryDto = {},
+  ): Promise<TournamentDto[]> {
+    const entities = await this.buildListQuery(query, false).getMany();
 
     return entities.map((entity) => this.mapTournamentToDto(entity));
   }
@@ -682,5 +668,116 @@ export class TournamentsService {
         excludeExtraneousValues: true,
       },
     );
+  }
+
+  private buildListQuery(query: GetTournamentsQueryDto, publicOnly: boolean) {
+    this.validateListFilters(query);
+
+    const queryBuilder = this.tournaments
+      .createQueryBuilder('tournament')
+      .orderBy('tournament.startAt', 'ASC');
+
+    if (publicOnly) {
+      queryBuilder.where('tournament.status IN (:...publicStatuses)', {
+        publicStatuses: [
+          TournamentStatus.Published,
+          TournamentStatus.RegistrationClosed,
+          TournamentStatus.InProgress,
+          TournamentStatus.Completed,
+          TournamentStatus.Cancelled,
+        ],
+      });
+    }
+
+    if (query.search) {
+      queryBuilder.andWhere('tournament.title ILIKE :search', {
+        search: `%${query.search.trim()}%`,
+      });
+    }
+
+    if (query.status !== undefined) {
+      queryBuilder.andWhere('tournament.status = :status', {
+        status: query.status,
+      });
+    }
+
+    if (query.startDateFrom) {
+      queryBuilder.andWhere('tournament.startAt >= :startDateFrom', {
+        startDateFrom: query.startDateFrom,
+      });
+    }
+
+    if (query.startDateTo) {
+      queryBuilder.andWhere('tournament.startAt <= :startDateTo', {
+        startDateTo: query.startDateTo,
+      });
+    }
+
+    if (query.registrationDeadlineFrom) {
+      queryBuilder.andWhere(
+        'tournament.registrationDeadline >= :registrationDeadlineFrom',
+        {
+          registrationDeadlineFrom: query.registrationDeadlineFrom,
+        },
+      );
+    }
+
+    if (query.registrationDeadlineTo) {
+      queryBuilder.andWhere(
+        'tournament.registrationDeadline <= :registrationDeadlineTo',
+        {
+          registrationDeadlineTo: query.registrationDeadlineTo,
+        },
+      );
+    }
+
+    if (query.minEntryFee !== undefined) {
+      queryBuilder.andWhere('tournament.entryFee >= :minEntryFee', {
+        minEntryFee: query.minEntryFee,
+      });
+    }
+
+    if (query.maxEntryFee !== undefined) {
+      queryBuilder.andWhere('tournament.entryFee <= :maxEntryFee', {
+        maxEntryFee: query.maxEntryFee,
+      });
+    }
+
+    return queryBuilder;
+  }
+
+  private validateListFilters({
+    startDateFrom,
+    startDateTo,
+    registrationDeadlineFrom,
+    registrationDeadlineTo,
+    minEntryFee,
+    maxEntryFee,
+  }: GetTournamentsQueryDto): void {
+    if (startDateFrom && startDateTo && startDateFrom > startDateTo) {
+      throw new BadRequestException(
+        'startDateFrom cannot be greater than startDateTo',
+      );
+    }
+
+    if (
+      registrationDeadlineFrom &&
+      registrationDeadlineTo &&
+      registrationDeadlineFrom > registrationDeadlineTo
+    ) {
+      throw new BadRequestException(
+        'registrationDeadlineFrom cannot be greater than registrationDeadlineTo',
+      );
+    }
+
+    if (
+      minEntryFee !== undefined &&
+      maxEntryFee !== undefined &&
+      minEntryFee > maxEntryFee
+    ) {
+      throw new BadRequestException(
+        'minEntryFee cannot be greater than maxEntryFee',
+      );
+    }
   }
 }

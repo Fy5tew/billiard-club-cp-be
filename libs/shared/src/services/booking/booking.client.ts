@@ -10,6 +10,7 @@ import {
   BookingId,
   CreateBookingContextDto,
   CreateBookingDto,
+  GetBookingsQueryDto,
   GetBookedSlotsDto,
   UpdateBookingStatusDto,
 } from '../../dtos/booking.dto';
@@ -57,9 +58,12 @@ export class BookingClient {
     );
   }
 
-  async getBookings(): Promise<BookingDto[]> {
+  async getBookings(query: GetBookingsQueryDto = {}): Promise<BookingDto[]> {
     return firstValueFrom(
-      this.client.send<BookingDto[], object>(BookingMessage.GET_BOOKINGS, {}),
+      this.client.send<BookingDto[], GetBookingsQueryDto>(
+        BookingMessage.GET_BOOKINGS,
+        query,
+      ),
     );
   }
 

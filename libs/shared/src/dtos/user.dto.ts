@@ -1,5 +1,11 @@
-import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  OmitType,
+  PartialType,
+  PickType,
+} from '@nestjs/swagger';
+import { Expose, Type } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
@@ -65,6 +71,35 @@ export class SimplifiedUserDto extends PickType(UserDto, [
   'surname',
   'email',
 ]) {}
+
+export class GetUsersQueryDto {
+  @ApiPropertyOptional({ required: false })
+  @IsOptional()
+  @IsNotEmpty()
+  name?: string;
+
+  @ApiPropertyOptional({ required: false })
+  @IsOptional()
+  @IsNotEmpty()
+  surname?: string;
+
+  @ApiPropertyOptional({ required: false })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({ enum: UserRole, required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @ApiPropertyOptional({ enum: UserStatus, required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsEnum(UserStatus)
+  status?: UserStatus;
+}
 
 export class CreateUserDto extends OmitType(UserDto, [
   'id',

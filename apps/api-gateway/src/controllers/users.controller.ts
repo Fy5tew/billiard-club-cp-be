@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   UploadedFile,
   UseInterceptors,
@@ -23,6 +24,7 @@ import {
 
 import type { SimplifiedUserDto, UserId } from '@app/shared/dtos/user.dto';
 import {
+  GetUsersQueryDto,
   UserDto,
   UpdateUserDto,
   UpdateUserProfileDto,
@@ -56,8 +58,8 @@ export class UsersController {
   })
   @RoleAccess(UserRole.Admin)
   @Get()
-  async getUsers(): Promise<UserDto[]> {
-    return this.identityClient.getUsers();
+  async getUsers(@Query() query: GetUsersQueryDto): Promise<UserDto[]> {
+    return this.identityClient.getUsers(query);
   }
 
   @ApiBearerAuth()

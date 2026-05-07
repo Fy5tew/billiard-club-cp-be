@@ -15,6 +15,7 @@ import {
   BookingId,
   CreateBookingContextDto,
   CreateBookingDto,
+  GetBookingsQueryDto,
   UpdateBookingStatusDto,
   GetBookedSlotsDto,
   BookedSlotDto,
@@ -131,10 +132,68 @@ export class BookingService {
     }));
   }
 
-  async getBookings(): Promise<BookingDto[]> {
-    const entities = await this.bookings.find({
-      order: { createdAt: 'DESC' },
-    });
+  async getBookings(query: GetBookingsQueryDto = {}): Promise<BookingDto[]> {
+    this.validateFilters(query);
+
+    const queryBuilder = this.bookings
+      .createQueryBuilder('booking')
+      .orderBy('booking.createdAt', 'DESC');
+
+    if (query.status !== undefined) {
+      queryBuilder.andWhere('booking.status = :status', {
+        status: query.status,
+      });
+    }
+
+    if (query.userId) {
+      queryBuilder.andWhere('booking.userId = :userId', {
+        userId: query.userId,
+      });
+    }
+
+    if (query.billiardTableId) {
+      queryBuilder.andWhere('booking.billiardTableId = :billiardTableId', {
+        billiardTableId: query.billiardTableId,
+      });
+    }
+
+    if (query.startDateFrom) {
+      queryBuilder.andWhere('booking.startTime >= :startDateFrom', {
+        startDateFrom: query.startDateFrom,
+      });
+    }
+
+    if (query.startDateTo) {
+      queryBuilder.andWhere('booking.startTime <= :startDateTo', {
+        startDateTo: query.startDateTo,
+      });
+    }
+
+    if (query.createdFrom) {
+      queryBuilder.andWhere('booking.createdAt >= :createdFrom', {
+        createdFrom: query.createdFrom,
+      });
+    }
+
+    if (query.createdTo) {
+      queryBuilder.andWhere('booking.createdAt <= :createdTo', {
+        createdTo: query.createdTo,
+      });
+    }
+
+    if (query.minTotalCost !== undefined) {
+      queryBuilder.andWhere('booking.totalCost >= :minTotalCost', {
+        minTotalCost: query.minTotalCost,
+      });
+    }
+
+    if (query.maxTotalCost !== undefined) {
+      queryBuilder.andWhere('booking.totalCost <= :maxTotalCost', {
+        maxTotalCost: query.maxTotalCost,
+      });
+    }
+
+    const entities = await queryBuilder.getMany();
     return entities.map((e) => this.mapEntityToDto(e));
   }
 
@@ -270,5 +329,36 @@ export class BookingService {
     return plainToInstance(BookingDto, entity, {
       excludeExtraneousValues: true,
     });
+  }
+
+  private validateFilters({
+    startDateFrom,
+    startDateTo,
+    createdFrom,
+    createdTo,
+    minTotalCost,
+    maxTotalCost,
+  }: GetBookingsQueryDto): void {
+    if (startDateFrom && startDateTo && startDateFrom > startDateTo) {
+      throw new BadRequestException(
+        'startDateFrom cannot be greater than startDateTo',
+      );
+    }
+
+    if (createdFrom && createdTo && createdFrom > createdTo) {
+      throw new BadRequestException(
+        'createdFrom cannot be greater than createdTo',
+      );
+    }
+
+    if (
+      minTotalCost !== undefined &&
+      maxTotalCost !== undefined &&
+      minTotalCost > maxTotalCost
+    ) {
+      throw new BadRequestException(
+        'minTotalCost cannot be greater than maxTotalCost',
+      );
+    }
   }
 }

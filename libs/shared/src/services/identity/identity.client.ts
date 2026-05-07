@@ -6,6 +6,7 @@ import { IdentityMessage } from './identity.messages';
 import { LoginDto, TokensDto } from '../../dtos/auth.dto';
 import type {
   CreateUserDto,
+  GetUsersQueryDto,
   SimplifiedUserDto,
   UpdateUserDto,
   UpdateUserPhotoDto,
@@ -81,9 +82,12 @@ export class IdentityClient {
     );
   }
 
-  async getUsers(): Promise<UserDto[]> {
+  async getUsers(query: GetUsersQueryDto = {}): Promise<UserDto[]> {
     return firstValueFrom(
-      this.client.send<UserDto[], object>(IdentityMessage.GET_USERS, {}),
+      this.client.send<UserDto[], GetUsersQueryDto>(
+        IdentityMessage.GET_USERS,
+        query,
+      ),
     );
   }
 

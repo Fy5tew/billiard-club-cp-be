@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   Req,
 } from '@nestjs/common';
 import {
@@ -28,6 +29,7 @@ import type { TournamentRegistrationId } from '@app/shared/dtos/tournament-regis
 import {
   TournamentDto,
   CreateTournamentDto,
+  GetTournamentsQueryDto,
   UpdateTournamentDto,
 } from '@app/shared/dtos/tournament.dto';
 import type { TournamentId } from '@app/shared/dtos/tournament.dto';
@@ -51,8 +53,10 @@ export class TournamentsController {
   @ApiResponse({ status: HttpStatus.OK, type: [TournamentDto] })
   @PublicRoute()
   @Get(TournamentsRoute.PUBLIC)
-  async getPublicList(): Promise<TournamentDto[]> {
-    return this.tournamentsClient.getList();
+  async getPublicList(
+    @Query() query: GetTournamentsQueryDto,
+  ): Promise<TournamentDto[]> {
+    return this.tournamentsClient.getList(query);
   }
 
   @ApiBearerAuth()
@@ -60,8 +64,10 @@ export class TournamentsController {
   @ApiResponse({ status: HttpStatus.OK, type: [TournamentDto] })
   @RoleAccess(UserRole.Manager)
   @Get()
-  async getList(): Promise<TournamentDto[]> {
-    return this.tournamentsClient.getListPrivate();
+  async getList(
+    @Query() query: GetTournamentsQueryDto,
+  ): Promise<TournamentDto[]> {
+    return this.tournamentsClient.getListPrivate(query);
   }
 
   @ApiOperation({ summary: 'Get tournament by ID' })
