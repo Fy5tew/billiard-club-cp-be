@@ -16,6 +16,7 @@ export class ConfigService implements Config {
   BOOKING: Config['BOOKING'];
   TOURNAMENTS: Config['TOURNAMENTS'];
   STATISTICS: Config['STATISTICS'];
+  NEWS: Config['NEWS'];
   NOTIFICATION: Config['NOTIFICATION'];
   STORAGE: Config['STORAGE'];
 

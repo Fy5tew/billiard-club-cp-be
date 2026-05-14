@@ -8,6 +8,7 @@
   - `IDENTITY.RMQ_QUEUE`
   - `BILLIARD_TABLES.RMQ_QUEUE`
   - `BOOKING.RMQ_QUEUE`
+  - `NEWS.RMQ_QUEUE`
   - `NOTIFICATION.RMQ_QUEUE`
   - `STORAGE.RMQ_QUEUE`
 
@@ -83,6 +84,24 @@
 - Event:
   - `send_email`
 
+### News
+
+- Message enum: `libs/shared/src/services/news/news.messages.ts`
+- Client wrapper: `libs/shared/src/services/news/news.client.ts`
+- Messages:
+  - `news_create`
+  - `news_get_public_list`
+  - `news_get_public_by_id`
+  - `news_get_public_tags`
+  - `news_get_manage_list`
+  - `news_get_manage_by_id`
+  - `news_get_manage_tags`
+  - `news_update_by_id`
+  - `news_delete_by_id`
+  - `news_update_status_by_id`
+  - `news_update_cover_by_id`
+  - `news_delete_cover_by_id`
+
 ### Storage
 
 - Message enum: `libs/shared/src/services/storage/storage.messages.ts`
@@ -101,6 +120,7 @@
   - `billiard-tables`
   - `booking`
   - `tournaments`
+  - `news`
 - source: `apps/api-gateway/src/api-gateway.module.ts`
 
 ### `identity`
@@ -126,6 +146,12 @@
 
 - no internal service clients found in codebase
 - source: `apps/tournaments/src/tournaments.module.ts`
+
+### `news`
+
+- depends on:
+  - `storage`
+- source: `apps/news/src/news.module.ts`
 
 ### `notification`
 

@@ -85,6 +85,10 @@ const statisticsServiceConfigSchema = z.object({
   RMQ_QUEUE: z.string(),
 });
 
+const newsServiceConfigSchema = z.object({
+  RMQ_QUEUE: z.string(),
+});
+
 const notificationServiceConfigSchema = z.object({
   RMQ_QUEUE: z.string(),
   SENDER_NAME: z.string(),
@@ -107,6 +111,7 @@ export const configSchema = z.object({
   BOOKING: bookingServiceConfigSchema,
   TOURNAMENTS: tournamentsServiceConfigSchema,
   STATISTICS: statisticsServiceConfigSchema,
+  NEWS: newsServiceConfigSchema,
   NOTIFICATION: notificationServiceConfigSchema,
   STORAGE: storageServiceConfigSchema,
 });

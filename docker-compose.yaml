@@ -209,6 +209,22 @@ services:
       postgres:
         condition: service_healthy
 
+  news-service:
+    container_name: news-service
+    build:
+      context: .
+      dockerfile: ./apps/news/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   notification-service:
     container_name: notification-service
     build:

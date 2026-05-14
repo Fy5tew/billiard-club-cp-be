@@ -100,6 +100,23 @@ Controller: `apps/api-gateway/src/controllers/bookings.controller.ts`
 - `POST /bookings/:id/pay/manual` -> `BookingDto`
 - `POST /bookings/:id/pay` -> `BookingDto`
 
+## News API
+
+Controller: `apps/api-gateway/src/controllers/news.controller.ts`
+
+- `GET /news` + `GetPublicNewsQueryDto` query -> `NewsDto[]`
+- `GET /news/tags` -> `string[]`
+- `GET /news/:id` -> `NewsDto`
+- `GET /news/manage` + `GetManageNewsQueryDto` query -> `NewsDto[]`
+- `GET /news/manage/tags` -> `string[]`
+- `GET /news/manage/:id` -> `NewsDto`
+- `POST /news/manage` -> `CreateNewsDto` -> `NewsDto`
+- `PATCH /news/manage/:id` -> `UpdateNewsDto` -> `NewsDto`
+- `PATCH /news/manage/:id/status` -> `UpdateNewsStatusDto` -> `NewsDto`
+- `POST /news/manage/:id/cover` -> multipart `file` -> `NewsDto`
+- `DELETE /news/manage/:id/cover` -> `NewsDto`
+- `DELETE /news/manage/:id` -> `NewsDto`
+
 ## Validation Notes
 
 - Global `ValidationPipe({ transform: true })` is enabled in `apps/api-gateway/src/main.ts`.

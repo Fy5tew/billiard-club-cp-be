@@ -5,6 +5,7 @@ import { loadConfig } from '@app/shared/config/load-config';
 import { BilliardTablePhotoEntity } from '@app/shared/entities/billiard-table-photo.entity';
 import { BilliardTableEntity } from '@app/shared/entities/billiard-table.entity';
 import { BookingEntity } from '@app/shared/entities/booking.entity';
+import { NewsEntity } from '@app/shared/entities/news.entity';
 import { TournamentRegistrationEntity } from '@app/shared/entities/tournament-registration.entity';
 import { TournamentEntity } from '@app/shared/entities/tournament.entity';
 import { UserEntity } from '@app/shared/entities/user.entity';
@@ -25,6 +26,7 @@ export const AppDataSource = new DataSource({
     BookingEntity,
     TournamentEntity,
     TournamentRegistrationEntity,
+    NewsEntity,
   ],
   migrations: ['apps/migrations/src/migrations/*.ts'],
 });
