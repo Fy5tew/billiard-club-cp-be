@@ -92,6 +92,24 @@ export class TournamentsClient {
     );
   }
 
+  async closeRegistrationById(id: TournamentId): Promise<TournamentDto> {
+    return firstValueFrom(
+      this.client.send<TournamentDto, TournamentId>(
+        TournamentsMessage.CLOSE_REGISTRATION_BY_ID,
+        id,
+      ),
+    );
+  }
+
+  async openRegistrationById(id: TournamentId): Promise<TournamentDto> {
+    return firstValueFrom(
+      this.client.send<TournamentDto, TournamentId>(
+        TournamentsMessage.OPEN_REGISTRATION_BY_ID,
+        id,
+      ),
+    );
+  }
+
   async cancelById(id: TournamentId): Promise<TournamentDto> {
     return firstValueFrom(
       this.client.send<TournamentDto, TournamentId>(

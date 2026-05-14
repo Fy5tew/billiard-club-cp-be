@@ -63,6 +63,20 @@ export class TournamentsController {
     return this.tournamentsService.publishById(id);
   }
 
+  @MessagePattern(TournamentsMessage.CLOSE_REGISTRATION_BY_ID)
+  async closeRegistrationById(
+    @Payload() id: TournamentId,
+  ): Promise<TournamentDto> {
+    return this.tournamentsService.closeRegistrationById(id);
+  }
+
+  @MessagePattern(TournamentsMessage.OPEN_REGISTRATION_BY_ID)
+  async openRegistrationById(
+    @Payload() id: TournamentId,
+  ): Promise<TournamentDto> {
+    return this.tournamentsService.openRegistrationById(id);
+  }
+
   @MessagePattern(TournamentsMessage.CANCEL_BY_ID)
   async cancelById(@Payload() id: TournamentId): Promise<TournamentDto> {
     return this.tournamentsService.cancelById(id);

@@ -12,6 +12,8 @@ export enum TournamentsRoute {
   TOURNAMENT_REGISTER = ':id/register',
   TOURNAMENT_REGISTER_MANUAL = ':id/register/manual',
   TOURNAMENT_PUBLISH = ':id/publish',
+  TOURNAMENT_CLOSE_REGISTRATION = ':id/close-registration',
+  TOURNAMENT_OPEN_REGISTRATION = ':id/open-registration',
   TOURNAMENT_CANCEL = ':id/cancel',
   TOURNAMENT_START = ':id/start',
   TOURNAMENT_COMPLETE = ':id/complete',

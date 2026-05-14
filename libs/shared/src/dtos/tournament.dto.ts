@@ -104,6 +104,18 @@ export class TournamentDto {
   @IsDate()
   @Type(() => Date)
   publishedAt: Date | null;
+
+  @ApiProperty({ example: 8 })
+  @Expose()
+  @IsInt()
+  @Min(0)
+  approvedRegistrationsCount: number;
+
+  @ApiProperty({ example: 3 })
+  @Expose()
+  @IsInt()
+  @Min(0)
+  pendingRegistrationsCount: number;
 }
 
 export class GetTournamentsQueryDto {

@@ -111,7 +111,9 @@ export class TournamentsService {
   async getList(query: GetTournamentsQueryDto = {}): Promise<TournamentDto[]> {
     const entities = await this.buildListQuery(query, true).getMany();
 
-    return entities.map((entity) => this.mapTournamentToDto(entity));
+    return Promise.all(
+      entities.map((entity) => this.mapTournamentToDto(entity)),
+    );
   }
 
   async getByIdPrivate(id: TournamentId): Promise<TournamentDto> {
@@ -125,7 +127,9 @@ export class TournamentsService {
   ): Promise<TournamentDto[]> {
     const entities = await this.buildListQuery(query, false).getMany();
 
-    return entities.map((entity) => this.mapTournamentToDto(entity));
+    return Promise.all(
+      entities.map((entity) => this.mapTournamentToDto(entity)),
+    );
   }
 
   async publishById(id: TournamentId): Promise<TournamentDto> {
@@ -147,6 +151,38 @@ export class TournamentsService {
     return this.mapTournamentToDto(
       await this.getTournamentEntityById(id, false),
     );
+  }
+
+  async closeRegistrationById(id: TournamentId): Promise<TournamentDto> {
+    const tournament = await this.getTournamentEntityById(id, false);
+
+    if (tournament.status !== TournamentStatus.Published) {
+      throw new BadRequestException(
+        'Only published tournaments can close registration',
+      );
+    }
+
+    this.ensureTournamentHasNotStarted(tournament);
+
+    tournament.status = TournamentStatus.RegistrationClosed;
+
+    return this.mapTournamentToDto(await this.tournaments.save(tournament));
+  }
+
+  async openRegistrationById(id: TournamentId): Promise<TournamentDto> {
+    const tournament = await this.getTournamentEntityById(id, false);
+
+    if (tournament.status !== TournamentStatus.RegistrationClosed) {
+      throw new BadRequestException(
+        'Only registration-closed tournaments can open registration',
+      );
+    }
+
+    this.ensureRegistrationIsOpen(tournament);
+
+    tournament.status = TournamentStatus.Published;
+
+    return this.mapTournamentToDto(await this.tournaments.save(tournament));
   }
 
   async cancelById(id: TournamentId): Promise<TournamentDto> {
@@ -232,15 +268,25 @@ export class TournamentsService {
       where: {
         tournamentId,
         userId,
-        status: In([
-          TournamentRegistrationStatus.Pending,
-          TournamentRegistrationStatus.Approved,
-        ]),
       },
     });
 
     if (existingRegistration) {
-      throw new ConflictException('User already has an active registration');
+      if (
+        existingRegistration.status === TournamentRegistrationStatus.Cancelled
+      ) {
+        existingRegistration.status = TournamentRegistrationStatus.Pending;
+
+        const savedRegistration =
+          await this.registrations.save(existingRegistration);
+        await this.syncTournamentRegistrationState(tournamentId);
+
+        return this.mapRegistrationToDto(savedRegistration);
+      }
+
+      throw new ConflictException(
+        'User already has a registration for this tournament',
+      );
     }
 
     const approvedCount =
@@ -277,15 +323,13 @@ export class TournamentsService {
       where: {
         tournamentId,
         userId,
-        status: In([
-          TournamentRegistrationStatus.Pending,
-          TournamentRegistrationStatus.Approved,
-        ]),
       },
     });
 
-    if (activeRegistration?.status === TournamentRegistrationStatus.Approved) {
-      throw new ConflictException('User already has an approved registration');
+    if (activeRegistration) {
+      throw new ConflictException(
+        'User already has a registration for this tournament',
+      );
     }
 
     const approvedCount =
@@ -294,12 +338,10 @@ export class TournamentsService {
       throw new ConflictException('Tournament participant limit reached');
     }
 
-    const registration =
-      activeRegistration ??
-      this.registrations.create({
-        tournamentId,
-        userId,
-      });
+    const registration = this.registrations.create({
+      tournamentId,
+      userId,
+    });
 
     registration.status = TournamentRegistrationStatus.Approved;
 
@@ -528,7 +570,9 @@ export class TournamentsService {
         TournamentRegistrationStatus.Attended,
         TournamentRegistrationStatus.NoShow,
       ],
-      [TournamentRegistrationStatus.Rejected]: [],
+      [TournamentRegistrationStatus.Rejected]: [
+        TournamentRegistrationStatus.Approved,
+      ],
       [TournamentRegistrationStatus.Cancelled]: [],
       [TournamentRegistrationStatus.Attended]: [],
       [TournamentRegistrationStatus.NoShow]: [],
@@ -564,26 +608,8 @@ export class TournamentsService {
     ) {
       return;
     }
-
-    const approvedCount =
-      await this.getApprovedRegistrationsCount(tournamentId);
-
-    if (approvedCount >= tournament.maxParticipants) {
-      if (tournament.status !== TournamentStatus.RegistrationClosed) {
-        tournament.status = TournamentStatus.RegistrationClosed;
-        await this.tournaments.save(tournament);
-      }
-      return;
-    }
-
-    if (
-      tournament.status === TournamentStatus.RegistrationClosed &&
-      new Date() < new Date(tournament.registrationDeadline) &&
-      new Date() < new Date(tournament.startAt)
-    ) {
-      tournament.status = TournamentStatus.Published;
-      await this.tournaments.save(tournament);
-    }
+    // Registration open/close is controlled manually (Manager actions).
+    // Capacity is enforced on approve/register operations, so we don't auto-close.
   }
 
   private async getApprovedRegistrationsCount(
@@ -593,6 +619,17 @@ export class TournamentsService {
       where: {
         tournamentId,
         status: TournamentRegistrationStatus.Approved,
+      },
+    });
+  }
+
+  private async getPendingRegistrationsCount(
+    tournamentId: TournamentId,
+  ): Promise<number> {
+    return this.registrations.count({
+      where: {
+        tournamentId,
+        status: TournamentRegistrationStatus.Pending,
       },
     });
   }
@@ -620,6 +657,15 @@ export class TournamentsService {
       throw new NotFoundException(`Tournament with id '${id}' not found`);
     }
 
+    if (
+      publicOnly &&
+      entity.status === TournamentStatus.Cancelled &&
+      !entity.publishedAt
+    ) {
+      // Cancelled tournaments that were never published should not be visible publicly.
+      throw new NotFoundException(`Tournament with id '${id}' not found`);
+    }
+
     return entity;
   }
 
@@ -639,12 +685,20 @@ export class TournamentsService {
     return entity;
   }
 
-  private mapTournamentToDto(entity: TournamentEntity): TournamentDto {
+  private async mapTournamentToDto(
+    entity: TournamentEntity,
+  ): Promise<TournamentDto> {
     return plainToInstance(
       TournamentDto,
       {
         ...entity,
         entryFee: Number(entity.entryFee),
+        approvedRegistrationsCount: await this.getApprovedRegistrationsCount(
+          entity.id,
+        ),
+        pendingRegistrationsCount: await this.getPendingRegistrationsCount(
+          entity.id,
+        ),
       },
       {
         excludeExtraneousValues: true,
@@ -687,6 +741,12 @@ export class TournamentsService {
           TournamentStatus.Cancelled,
         ],
       });
+      queryBuilder.andWhere(
+        '(tournament.status != :cancelledStatus OR tournament.publishedAt IS NOT NULL)',
+        {
+          cancelledStatus: TournamentStatus.Cancelled,
+        },
+      );
     }
 
     if (query.search) {

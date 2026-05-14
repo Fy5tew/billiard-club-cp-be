@@ -130,6 +130,30 @@ export class TournamentsController {
   }
 
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Close tournament registration' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentDto })
+  @RoleAccess(UserRole.Manager)
+  @Post(TournamentsRoute.TOURNAMENT_CLOSE_REGISTRATION)
+  async closeRegistrationById(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+  ): Promise<TournamentDto> {
+    return this.tournamentsClient.closeRegistrationById(id);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Open tournament registration' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentDto })
+  @RoleAccess(UserRole.Manager)
+  @Post(TournamentsRoute.TOURNAMENT_OPEN_REGISTRATION)
+  async openRegistrationById(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+  ): Promise<TournamentDto> {
+    return this.tournamentsClient.openRegistrationById(id);
+  }
+
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel tournament' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({ status: HttpStatus.OK, type: TournamentDto })
