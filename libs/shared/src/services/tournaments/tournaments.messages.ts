@@ -20,4 +20,13 @@ export enum TournamentsMessage {
   MARK_NO_SHOW = 'mark_no_show',
   GET_REGISTRATIONS_BY_TOURNAMENT_ID = 'get_registrations_by_tournament_id',
   GET_REGISTRATIONS_BY_USER_ID = 'get_registrations_by_user_id',
+  GET_PARTICIPANTS = 'tournaments_get_participants',
+  UPDATE_PARTICIPANT_ATTENDANCE = 'tournaments_update_participant_attendance',
+  GET_BRACKET = 'tournaments_get_bracket',
+  CREATE_BRACKET = 'tournaments_create_bracket',
+  RANDOMIZE_BRACKET_SEEDING = 'tournaments_randomize_bracket_seeding',
+  UPDATE_BRACKET_SEEDING = 'tournaments_update_bracket_seeding',
+  CONFIRM_BRACKET_SEEDING = 'tournaments_confirm_bracket_seeding',
+  SET_MATCH_RESULT = 'tournaments_set_match_result',
+  GET_LEADERBOARD = 'tournaments_get_leaderboard',
 }

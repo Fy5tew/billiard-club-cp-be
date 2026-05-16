@@ -1,6 +1,8 @@
 import { Injectable, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import type { Request } from 'express';
+import { catchError, isObservable, of } from 'rxjs';
 
 import { IS_PUBLIC_KEY, JWT_ACCESS_STRATEGY } from './auth.constants';
 
@@ -16,10 +18,30 @@ export class JwtAccessAuthGuard extends AuthGuard(JWT_ACCESS_STRATEGY) {
       context.getClass(),
     ]);
 
-    if (isPublic) {
+    if (!isPublic) {
+      return super.canActivate(context);
+    }
+
+    const request = context.switchToHttp().getRequest<Request>();
+
+    if (!request.headers.authorization) {
       return true;
     }
 
-    return super.canActivate(context);
+    try {
+      const result = super.canActivate(context);
+
+      if (isObservable(result)) {
+        return result.pipe(catchError(() => of(true)));
+      }
+
+      if (result instanceof Promise) {
+        return result.catch(() => true);
+      }
+
+      return result;
+    } catch {
+      return true;
+    }
   }
 }

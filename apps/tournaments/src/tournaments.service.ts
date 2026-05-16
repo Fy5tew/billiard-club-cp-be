@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+
 import {
   BadRequestException,
   ConflictException,
@@ -8,6 +10,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { In, Repository } from 'typeorm';
 
+import {
+  SetTournamentMatchResultDto,
+  TournamentBracketDto,
+  TournamentBracketStatus,
+  TournamentLeaderboardItemDto,
+  TournamentMatchDto,
+  TournamentMatchId,
+  TournamentMatchSlot,
+  TournamentMatchStatus,
+  TournamentMatchWinReason,
+  UpdateTournamentBracketSeedingDto,
+} from '@app/shared/dtos/tournament-bracket.dto';
+import { TournamentParticipantDto } from '@app/shared/dtos/tournament-participant.dto';
 import {
   CreateTournamentRegistrationManualDto,
   TournamentRegistrationDto,
@@ -23,6 +38,8 @@ import {
   UpdateTournamentDto,
 } from '@app/shared/dtos/tournament.dto';
 import type { UserId } from '@app/shared/dtos/user.dto';
+import { TournamentBracketEntity } from '@app/shared/entities/tournament-bracket.entity';
+import { TournamentMatchEntity } from '@app/shared/entities/tournament-match.entity';
 import { TournamentRegistrationEntity } from '@app/shared/entities/tournament-registration.entity';
 import { TournamentEntity } from '@app/shared/entities/tournament.entity';
 
@@ -33,6 +50,10 @@ export class TournamentsService {
     private readonly tournaments: Repository<TournamentEntity>,
     @InjectRepository(TournamentRegistrationEntity)
     private readonly registrations: Repository<TournamentRegistrationEntity>,
+    @InjectRepository(TournamentBracketEntity)
+    private readonly brackets: Repository<TournamentBracketEntity>,
+    @InjectRepository(TournamentMatchEntity)
+    private readonly matches: Repository<TournamentMatchEntity>,
   ) {}
 
   async create(data: CreateTournamentDto): Promise<TournamentDto> {
@@ -68,6 +89,8 @@ export class TournamentsService {
         'Only draft and published tournaments can be updated',
       );
     }
+
+    this.ensureTournamentHasNotStarted(tournament);
 
     const nextState = {
       ...tournament,
@@ -248,7 +271,30 @@ export class TournamentsService {
       );
     }
 
+    const bracket = await this.getBracketEntityByTournamentId(id);
+
+    if (!bracket || bracket.status !== TournamentBracketStatus.Active) {
+      throw new BadRequestException(
+        'Нельзя завершить турнир до завершения финального матча.',
+      );
+    }
+
+    const finalMatch = await this.getFinalMatchEntity(bracket.id);
+
+    if (
+      !finalMatch ||
+      finalMatch.status !== TournamentMatchStatus.Completed ||
+      !finalMatch.winnerUserId
+    ) {
+      throw new BadRequestException(
+        'Нельзя завершить турнир до завершения финального матча.',
+      );
+    }
+
     tournament.status = TournamentStatus.Completed;
+    bracket.status = TournamentBracketStatus.Completed;
+    await this.brackets.save(bracket);
+
     return this.mapTournamentToDto(await this.tournaments.save(tournament));
   }
 
@@ -313,11 +359,16 @@ export class TournamentsService {
   ): Promise<TournamentRegistrationDto> {
     const tournament = await this.getTournamentEntityById(tournamentId, false);
 
-    if (tournament.status !== TournamentStatus.Published) {
+    if (
+      ![
+        TournamentStatus.Published,
+        TournamentStatus.RegistrationClosed,
+      ].includes(tournament.status)
+    ) {
       throw new BadRequestException('Tournament registration is closed');
     }
 
-    this.ensureRegistrationIsOpen(tournament);
+    this.ensureTournamentHasNotStarted(tournament);
 
     const activeRegistration = await this.registrations.findOne({
       where: {
@@ -468,6 +519,279 @@ export class TournamentsService {
     );
   }
 
+  async getParticipants(
+    tournamentId: TournamentId,
+  ): Promise<TournamentParticipantDto[]> {
+    const tournament = await this.getTournamentEntityById(tournamentId, true);
+
+    if (
+      ![TournamentStatus.InProgress, TournamentStatus.Completed].includes(
+        tournament.status,
+      )
+    ) {
+      throw new BadRequestException(
+        'Участники доступны только после старта турнира.',
+      );
+    }
+
+    const registrations =
+      await this.getParticipantRegistrationEntities(tournamentId);
+
+    return registrations.map((registration) =>
+      this.mapParticipantToDto(registration),
+    );
+  }
+
+  async updateParticipantAttendance(
+    tournamentId: TournamentId,
+    registrationId: TournamentRegistrationId,
+    status: TournamentRegistrationStatus,
+  ): Promise<TournamentParticipantDto> {
+    const tournament = await this.getTournamentEntityById(tournamentId, false);
+
+    if (tournament.status !== TournamentStatus.InProgress) {
+      throw new BadRequestException(
+        'Изменять явку можно только во время турнира.',
+      );
+    }
+
+    const bracket = await this.getBracketEntityByTournamentId(tournamentId);
+
+    if (
+      bracket &&
+      [
+        TournamentBracketStatus.Active,
+        TournamentBracketStatus.Completed,
+      ].includes(bracket.status)
+    ) {
+      throw new BadRequestException(
+        'Нельзя изменить явку после фиксации сетки.',
+      );
+    }
+
+    const registration = await this.getRegistrationEntityById(registrationId);
+
+    if (registration.tournamentId !== tournamentId) {
+      throw new NotFoundException(
+        `Tournament registration with id '${registrationId}' not found`,
+      );
+    }
+
+    this.ensureParticipantAttendanceTransition(registration.status, status);
+
+    registration.status = status;
+    await this.registrations.save(registration);
+
+    return this.mapParticipantToDto(registration);
+  }
+
+  async getBracket(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto | null> {
+    await this.getTournamentEntityById(tournamentId, true);
+
+    return this.mapBracketByTournamentId(tournamentId);
+  }
+
+  async createBracket(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    const tournament = await this.getTournamentEntityById(tournamentId, false);
+
+    if (tournament.status !== TournamentStatus.InProgress) {
+      throw new BadRequestException(
+        'Сетку можно создать только после старта турнира.',
+      );
+    }
+
+    const existingBracket =
+      await this.getBracketEntityByTournamentId(tournamentId);
+
+    if (existingBracket) {
+      throw new ConflictException('Сетка для этого турнира уже создана.');
+    }
+
+    const participantRegistrations =
+      await this.getParticipantRegistrationEntities(tournamentId);
+    const unmarkedCount = participantRegistrations.filter(
+      ({ status }) => status === TournamentRegistrationStatus.Approved,
+    ).length;
+
+    if (unmarkedCount > 0) {
+      throw new BadRequestException(
+        'Нельзя создать сетку, пока не отмечена явка всех подтверждённых участников.',
+      );
+    }
+
+    const attendedUserIds = participantRegistrations
+      .filter(({ status }) => status === TournamentRegistrationStatus.Attended)
+      .map(({ userId }) => userId);
+
+    if (attendedUserIds.length < 2) {
+      throw new BadRequestException(
+        'Для создания сетки нужно минимум 2 явившихся участника.',
+      );
+    }
+
+    const bracket = this.brackets.create({
+      id: randomUUID(),
+      tournamentId,
+      size: this.nextPowerOfTwo(attendedUserIds.length),
+      status: TournamentBracketStatus.Seeding,
+    });
+    const savedBracket = await this.brackets.save(bracket);
+
+    await this.matches.save(
+      this.createMatchEntities(
+        tournamentId,
+        savedBracket.id,
+        savedBracket.size,
+        this.shuffle(attendedUserIds),
+      ),
+    );
+
+    return this.mapBracketByEntity(savedBracket);
+  }
+
+  async randomizeBracketSeeding(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    const bracket = await this.getEditableBracket(tournamentId);
+    const attendedUserIds = await this.getAttendedUserIds(tournamentId);
+
+    await this.applySeedingSlots(bracket, this.shuffle(attendedUserIds));
+
+    return this.mapBracketByEntity(bracket);
+  }
+
+  async updateBracketSeeding(
+    tournamentId: TournamentId,
+    data: UpdateTournamentBracketSeedingDto,
+  ): Promise<TournamentBracketDto> {
+    const bracket = await this.getEditableBracket(tournamentId);
+    const matches = await this.getMatchesByBracketId(bracket.id);
+    const firstRoundMatches = matches.filter((match) => match.roundIndex === 1);
+    const firstRoundMatchIds = new Set(
+      firstRoundMatches.map((match) => match.id),
+    );
+    const attendedUserIds = new Set(
+      await this.getAttendedUserIds(tournamentId),
+    );
+
+    for (const { matchId, userId } of data.slots) {
+      if (!firstRoundMatchIds.has(matchId)) {
+        throw new BadRequestException(
+          'Расстановку можно менять только в первом раунде.',
+        );
+      }
+
+      if (userId && !attendedUserIds.has(userId)) {
+        throw new BadRequestException(
+          'В сетку можно добавить только явившегося участника турнира.',
+        );
+      }
+    }
+
+    for (const { matchId, slot, userId } of data.slots) {
+      const match = firstRoundMatches.find((item) => item.id === matchId);
+
+      if (!match) {
+        continue;
+      }
+
+      this.setMatchSlot(match, slot, userId);
+    }
+
+    this.ensureNoDuplicateSeedingParticipants(firstRoundMatches);
+    this.clearGeneratedBracketProgress(matches);
+    await this.matches.save(matches);
+
+    return this.mapBracketByEntity(bracket);
+  }
+
+  async confirmBracketSeeding(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    const bracket = await this.getEditableBracket(tournamentId);
+    const matches = await this.getMatchesByBracketId(bracket.id);
+    const firstRoundMatches = matches.filter((match) => match.roundIndex === 1);
+    const attendedUserIds = await this.getAttendedUserIds(tournamentId);
+
+    this.ensureNoDuplicateSeedingParticipants(firstRoundMatches);
+    this.ensureAllAttendedParticipantsSeeded(
+      firstRoundMatches,
+      attendedUserIds,
+    );
+
+    bracket.status = TournamentBracketStatus.Active;
+    this.prepareActiveBracketMatches(matches);
+    this.processAutomaticByeAdvancements(matches);
+
+    await this.matches.save(matches);
+    await this.brackets.save(bracket);
+
+    return this.mapBracketByEntity(bracket);
+  }
+
+  async setMatchResult(
+    tournamentId: TournamentId,
+    matchId: TournamentMatchId,
+    data: SetTournamentMatchResultDto,
+  ): Promise<TournamentBracketDto> {
+    const tournament = await this.getTournamentEntityById(tournamentId, false);
+
+    if (tournament.status !== TournamentStatus.InProgress) {
+      throw new BadRequestException(
+        'Результаты можно указывать только во время турнира.',
+      );
+    }
+
+    const bracket =
+      await this.getRequiredBracketEntityByTournamentId(tournamentId);
+
+    if (bracket.status !== TournamentBracketStatus.Active) {
+      throw new BadRequestException(
+        'Результаты можно указывать только после фиксации сетки.',
+      );
+    }
+
+    const matches = await this.getMatchesByBracketId(bracket.id);
+    const match = matches.find((item) => item.id === matchId);
+
+    if (!match || match.tournamentId !== tournamentId) {
+      throw new NotFoundException(
+        `Tournament match with id '${matchId}' not found`,
+      );
+    }
+
+    this.ensureMatchResultCanBeSet(match, data);
+    this.completeMatchWithResult(match, data);
+    this.advanceWinnerToNextMatch(match, matches);
+    this.processAutomaticByeAdvancements(matches);
+
+    await this.matches.save(matches);
+
+    return this.mapBracketByEntity(bracket);
+  }
+
+  async getLeaderboard(
+    tournamentId: TournamentId,
+  ): Promise<TournamentLeaderboardItemDto[]> {
+    const tournament = await this.getTournamentEntityById(tournamentId, true);
+
+    if (tournament.status !== TournamentStatus.Completed) {
+      throw new BadRequestException(
+        'Таблица лидеров доступна только после завершения турнира.',
+      );
+    }
+
+    const bracket =
+      await this.getRequiredBracketEntityByTournamentId(tournamentId);
+    const matches = await this.getMatchesByBracketId(bracket.id);
+
+    return this.buildLeaderboard(bracket, matches);
+  }
+
   private async finalizeAttendance(
     id: TournamentRegistrationId,
     nextStatus:
@@ -475,23 +799,739 @@ export class TournamentsService {
       | TournamentRegistrationStatus.NoShow,
   ): Promise<TournamentRegistrationDto> {
     const registration = await this.getRegistrationEntityById(id);
-    const tournament = await this.getTournamentEntityById(
+    const participant = await this.updateParticipantAttendance(
       registration.tournamentId,
-      false,
+      id,
+      nextStatus,
     );
 
-    if (!this.hasTournamentStarted(tournament)) {
+    return this.mapRegistrationToDto({
+      ...registration,
+      status: participant.status,
+    });
+  }
+
+  private async getParticipantRegistrationEntities(
+    tournamentId: TournamentId,
+  ): Promise<TournamentRegistrationEntity[]> {
+    return this.registrations.find({
+      where: {
+        tournamentId,
+        status: In([
+          TournamentRegistrationStatus.Approved,
+          TournamentRegistrationStatus.Attended,
+          TournamentRegistrationStatus.NoShow,
+        ]),
+      },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  private async getAttendedUserIds(
+    tournamentId: TournamentId,
+  ): Promise<UserId[]> {
+    const registrations = await this.registrations.find({
+      where: {
+        tournamentId,
+        status: TournamentRegistrationStatus.Attended,
+      },
+      order: { createdAt: 'ASC' },
+    });
+
+    return registrations.map(({ userId }) => userId);
+  }
+
+  private ensureParticipantAttendanceTransition(
+    current: TournamentRegistrationStatus,
+    next: TournamentRegistrationStatus,
+  ): void {
+    const attendanceStatuses = [
+      TournamentRegistrationStatus.Approved,
+      TournamentRegistrationStatus.Attended,
+      TournamentRegistrationStatus.NoShow,
+    ];
+
+    if (
+      !attendanceStatuses.includes(current) ||
+      !attendanceStatuses.includes(next)
+    ) {
+      throw new BadRequestException('Недопустимый статус явки участника.');
+    }
+  }
+
+  private async getEditableBracket(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketEntity> {
+    const tournament = await this.getTournamentEntityById(tournamentId, false);
+
+    if (tournament.status !== TournamentStatus.InProgress) {
       throw new BadRequestException(
-        'Attendance can only be marked after tournament start',
+        'Расстановку можно менять только во время турнира.',
       );
     }
 
-    this.ensureRegistrationTransition(registration.status, nextStatus);
+    const bracket =
+      await this.getRequiredBracketEntityByTournamentId(tournamentId);
 
-    registration.status = nextStatus;
-    await this.registrations.save(registration);
+    if (bracket.status !== TournamentBracketStatus.Seeding) {
+      throw new BadRequestException(
+        'Расстановку можно менять только до фиксации сетки.',
+      );
+    }
 
-    return this.mapRegistrationToDto(registration);
+    const matches = await this.getMatchesByBracketId(bracket.id);
+    const hasCompletedMatch = matches.some(
+      ({ status }) => status === TournamentMatchStatus.Completed,
+    );
+
+    if (hasCompletedMatch) {
+      throw new BadRequestException(
+        'Расстановку нельзя менять после завершения матчей.',
+      );
+    }
+
+    return bracket;
+  }
+
+  private async applySeedingSlots(
+    bracket: TournamentBracketEntity,
+    userIds: UserId[],
+  ): Promise<void> {
+    const matches = await this.getMatchesByBracketId(bracket.id);
+    const firstRoundMatches = matches
+      .filter(({ roundIndex }) => roundIndex === 1)
+      .sort((first, second) => first.matchIndex - second.matchIndex);
+    const slots = this.buildFirstRoundSlots(userIds, bracket.size);
+
+    firstRoundMatches.forEach((match, index) => {
+      match.participantAUserId = slots[index * 2] ?? null;
+      match.participantBUserId = slots[index * 2 + 1] ?? null;
+    });
+
+    this.clearGeneratedBracketProgress(matches);
+    await this.matches.save(matches);
+  }
+
+  private createMatchEntities(
+    tournamentId: TournamentId,
+    bracketId: string,
+    bracketSize: number,
+    userIds: UserId[],
+  ): TournamentMatchEntity[] {
+    const matchesByRound: TournamentMatchEntity[][] = [];
+    const roundsCount = Math.log2(bracketSize);
+    const slots = this.buildFirstRoundSlots(userIds, bracketSize);
+
+    for (let roundIndex = 1; roundIndex <= roundsCount; roundIndex += 1) {
+      const matchesInRound = bracketSize / 2 ** roundIndex;
+      const roundMatches: TournamentMatchEntity[] = [];
+
+      for (let matchIndex = 1; matchIndex <= matchesInRound; matchIndex += 1) {
+        const slotIndex = (matchIndex - 1) * 2;
+
+        roundMatches.push(
+          this.matches.create({
+            id: randomUUID(),
+            tournamentId,
+            bracketId,
+            roundIndex,
+            matchIndex,
+            participantAUserId:
+              roundIndex === 1 ? (slots[slotIndex] ?? null) : null,
+            participantBUserId:
+              roundIndex === 1 ? (slots[slotIndex + 1] ?? null) : null,
+            scoreA: null,
+            scoreB: null,
+            winnerUserId: null,
+            loserUserId: null,
+            status: TournamentMatchStatus.Pending,
+            winReason: null,
+            nextMatchId: null,
+            nextSlot: null,
+          }),
+        );
+      }
+
+      matchesByRound.push(roundMatches);
+    }
+
+    for (let roundIndex = 1; roundIndex < roundsCount; roundIndex += 1) {
+      const currentRoundMatches = matchesByRound[roundIndex - 1];
+      const nextRoundMatches = matchesByRound[roundIndex];
+
+      currentRoundMatches.forEach((match) => {
+        const nextMatchIndex = Math.ceil(match.matchIndex / 2);
+        const nextMatch = nextRoundMatches[nextMatchIndex - 1];
+
+        match.nextMatchId = nextMatch.id;
+        match.nextSlot =
+          match.matchIndex % 2 === 1
+            ? TournamentMatchSlot.A
+            : TournamentMatchSlot.B;
+      });
+    }
+
+    return matchesByRound.flat();
+  }
+
+  private buildFirstRoundSlots(
+    userIds: UserId[],
+    bracketSize: number,
+  ): Array<UserId | null> {
+    const slots: Array<UserId | null> = [];
+
+    for (let index = 0; index < bracketSize; index += 1) {
+      slots.push(null);
+    }
+
+    const seedOrder = this.getBracketSeedOrder(bracketSize);
+
+    userIds.forEach((userId, index) => {
+      const seedNumber = seedOrder[index];
+
+      if (seedNumber === undefined) {
+        return;
+      }
+
+      slots[seedNumber - 1] = userId;
+    });
+
+    return slots;
+  }
+
+  private getBracketSeedOrder(bracketSize: number): number[] {
+    if (bracketSize === 2) {
+      return [1, 2];
+    }
+
+    const previousSeedOrder = this.getBracketSeedOrder(bracketSize / 2);
+    const nextSeedOrder: number[] = [];
+
+    previousSeedOrder.forEach((seedNumber) => {
+      nextSeedOrder.push(seedNumber, bracketSize + 1 - seedNumber);
+    });
+
+    return nextSeedOrder;
+  }
+
+  private prepareActiveBracketMatches(matches: TournamentMatchEntity[]): void {
+    matches.forEach((match) => {
+      const participantCount = this.getParticipantCount(match);
+
+      match.scoreA = null;
+      match.scoreB = null;
+      match.winnerUserId = null;
+      match.loserUserId = null;
+      match.winReason = null;
+      match.status =
+        match.roundIndex === 1 && participantCount === 2
+          ? TournamentMatchStatus.Ready
+          : TournamentMatchStatus.Pending;
+    });
+  }
+
+  private clearGeneratedBracketProgress(
+    matches: TournamentMatchEntity[],
+  ): void {
+    matches.forEach((match) => {
+      if (match.roundIndex > 1) {
+        match.participantAUserId = null;
+        match.participantBUserId = null;
+      }
+
+      match.scoreA = null;
+      match.scoreB = null;
+      match.winnerUserId = null;
+      match.loserUserId = null;
+      match.winReason = null;
+      match.status = TournamentMatchStatus.Pending;
+    });
+  }
+
+  private processAutomaticByeAdvancements(
+    matches: TournamentMatchEntity[],
+  ): void {
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+
+      for (const match of this.sortMatches(matches)) {
+        if (match.status === TournamentMatchStatus.Completed) {
+          continue;
+        }
+
+        const participantCount = this.getParticipantCount(match);
+
+        if (participantCount === 2) {
+          if (match.status !== TournamentMatchStatus.Ready) {
+            match.status = TournamentMatchStatus.Ready;
+            changed = true;
+          }
+
+          continue;
+        }
+
+        if (!this.canResolveAutomaticBye(match, matches)) {
+          continue;
+        }
+
+        match.status = TournamentMatchStatus.Completed;
+        match.winReason = TournamentMatchWinReason.Bye;
+        match.scoreA = null;
+        match.scoreB = null;
+
+        if (participantCount === 1) {
+          match.winnerUserId =
+            match.participantAUserId ?? match.participantBUserId;
+          match.loserUserId = null;
+          this.advanceWinnerToNextMatch(match, matches);
+        }
+
+        changed = true;
+      }
+    }
+  }
+
+  private canResolveAutomaticBye(
+    match: TournamentMatchEntity,
+    matches: TournamentMatchEntity[],
+  ): boolean {
+    const previousMatches = matches.filter(
+      ({ nextMatchId }) => nextMatchId === match.id,
+    );
+
+    return (
+      previousMatches.length === 0 ||
+      previousMatches.every(
+        ({ status }) => status === TournamentMatchStatus.Completed,
+      )
+    );
+  }
+
+  private advanceWinnerToNextMatch(
+    match: TournamentMatchEntity,
+    matches: TournamentMatchEntity[],
+  ): void {
+    if (!match.nextMatchId || !match.nextSlot || !match.winnerUserId) {
+      return;
+    }
+
+    const nextMatch = matches.find(({ id }) => id === match.nextMatchId);
+
+    if (!nextMatch) {
+      return;
+    }
+
+    this.setMatchSlot(nextMatch, match.nextSlot, match.winnerUserId);
+  }
+
+  private completeMatchWithResult(
+    match: TournamentMatchEntity,
+    data: SetTournamentMatchResultDto,
+  ): void {
+    match.winnerUserId = data.winnerUserId;
+    match.loserUserId =
+      data.winnerUserId === match.participantAUserId
+        ? match.participantBUserId
+        : match.participantAUserId;
+    match.scoreA = data.scoreA;
+    match.scoreB = data.scoreB;
+    match.status = TournamentMatchStatus.Completed;
+    match.winReason = data.winReason ?? TournamentMatchWinReason.Normal;
+  }
+
+  private ensureMatchResultCanBeSet(
+    match: TournamentMatchEntity,
+    data: SetTournamentMatchResultDto,
+  ): void {
+    if (match.status !== TournamentMatchStatus.Ready) {
+      throw new BadRequestException('Матч ещё не готов к указанию результата.');
+    }
+
+    if (!match.participantAUserId || !match.participantBUserId) {
+      throw new BadRequestException(
+        'Результат можно указать только для матча с двумя участниками.',
+      );
+    }
+
+    if (
+      ![match.participantAUserId, match.participantBUserId].includes(
+        data.winnerUserId,
+      )
+    ) {
+      throw new BadRequestException('Победитель должен быть участником матча.');
+    }
+
+    if (
+      !Number.isInteger(data.scoreA) ||
+      !Number.isInteger(data.scoreB) ||
+      data.scoreA < 0 ||
+      data.scoreB < 0
+    ) {
+      throw new BadRequestException(
+        'Счёт должен быть целым числом больше или равным нулю.',
+      );
+    }
+
+    if (data.scoreA === data.scoreB) {
+      throw new BadRequestException('Ничья в матче запрещена.');
+    }
+
+    const winnerScore =
+      data.winnerUserId === match.participantAUserId
+        ? data.scoreA
+        : data.scoreB;
+    const loserScore =
+      data.winnerUserId === match.participantAUserId
+        ? data.scoreB
+        : data.scoreA;
+
+    if (winnerScore <= loserScore) {
+      throw new BadRequestException('Победитель должен иметь больший счёт.');
+    }
+  }
+
+  private ensureNoDuplicateSeedingParticipants(
+    firstRoundMatches: TournamentMatchEntity[],
+  ): void {
+    const userIds = firstRoundMatches.flatMap(
+      (match) =>
+        [match.participantAUserId, match.participantBUserId].filter(
+          Boolean,
+        ) as UserId[],
+    );
+    const uniqueUserIds = new Set(userIds);
+
+    if (uniqueUserIds.size !== userIds.length) {
+      throw new BadRequestException(
+        'Один участник не может находиться в сетке дважды.',
+      );
+    }
+  }
+
+  private ensureAllAttendedParticipantsSeeded(
+    firstRoundMatches: TournamentMatchEntity[],
+    attendedUserIds: UserId[],
+  ): void {
+    const seededUserIds = new Set(
+      firstRoundMatches.flatMap(
+        (match) =>
+          [match.participantAUserId, match.participantBUserId].filter(
+            Boolean,
+          ) as UserId[],
+      ),
+    );
+
+    if (seededUserIds.size !== attendedUserIds.length) {
+      throw new BadRequestException(
+        'Перед фиксацией сетки расставьте всех явившихся участников.',
+      );
+    }
+
+    const hasMissingUser = attendedUserIds.some(
+      (userId) => !seededUserIds.has(userId),
+    );
+
+    if (hasMissingUser) {
+      throw new BadRequestException(
+        'Перед фиксацией сетки расставьте всех явившихся участников.',
+      );
+    }
+  }
+
+  private buildLeaderboard(
+    bracket: TournamentBracketEntity,
+    matches: TournamentMatchEntity[],
+  ): TournamentLeaderboardItemDto[] {
+    const firstRoundParticipants = new Set(
+      matches
+        .filter(({ roundIndex }) => roundIndex === 1)
+        .flatMap((match) => [
+          match.participantAUserId,
+          match.participantBUserId,
+        ])
+        .filter(Boolean) as UserId[],
+    );
+    const finalMatch = this.getFinalMatchFromMatches(matches);
+    const stats = new Map<
+      UserId,
+      TournamentLeaderboardItemDto & {
+        eliminationRound: number;
+        sortName: string;
+      }
+    >();
+
+    firstRoundParticipants.forEach((userId) => {
+      stats.set(userId, {
+        userId,
+        place: 0,
+        matchesPlayed: 0,
+        wins: 0,
+        losses: 0,
+        scoreFor: 0,
+        scoreAgainst: 0,
+        scoreDiff: 0,
+        eliminationRound: 0,
+        sortName: userId,
+      });
+    });
+
+    this.sortMatches(matches).forEach((match) => {
+      if (
+        match.status !== TournamentMatchStatus.Completed ||
+        !match.winnerUserId
+      ) {
+        return;
+      }
+
+      const loserUserId = match.loserUserId;
+      const winnerStats = stats.get(match.winnerUserId);
+
+      if (
+        match.winReason !== TournamentMatchWinReason.Bye &&
+        match.participantAUserId &&
+        match.participantBUserId &&
+        match.scoreA !== null &&
+        match.scoreB !== null
+      ) {
+        const participantAStats = stats.get(match.participantAUserId);
+        const participantBStats = stats.get(match.participantBUserId);
+
+        if (participantAStats && participantBStats) {
+          participantAStats.matchesPlayed += 1;
+          participantBStats.matchesPlayed += 1;
+          participantAStats.scoreFor += match.scoreA;
+          participantAStats.scoreAgainst += match.scoreB;
+          participantBStats.scoreFor += match.scoreB;
+          participantBStats.scoreAgainst += match.scoreA;
+        }
+
+        if (winnerStats) {
+          winnerStats.wins += 1;
+        }
+
+        if (loserUserId) {
+          const loserStats = stats.get(loserUserId);
+
+          if (loserStats) {
+            loserStats.losses += 1;
+            loserStats.eliminationRound = match.roundIndex;
+          }
+        }
+      } else if (loserUserId) {
+        const loserStats = stats.get(loserUserId);
+
+        if (loserStats) {
+          loserStats.eliminationRound = match.roundIndex;
+        }
+      }
+    });
+
+    stats.forEach((item) => {
+      item.scoreDiff = item.scoreFor - item.scoreAgainst;
+    });
+
+    if (finalMatch?.winnerUserId) {
+      const winnerStats = stats.get(finalMatch.winnerUserId);
+
+      if (winnerStats) {
+        winnerStats.eliminationRound = finalMatch.roundIndex + 1;
+      }
+    }
+
+    const sorted = [...stats.values()].sort((first, second) => {
+      if (first.userId === finalMatch?.winnerUserId) {
+        return -1;
+      }
+
+      if (second.userId === finalMatch?.winnerUserId) {
+        return 1;
+      }
+
+      if (first.userId === finalMatch?.loserUserId) {
+        return -1;
+      }
+
+      if (second.userId === finalMatch?.loserUserId) {
+        return 1;
+      }
+
+      return (
+        second.eliminationRound - first.eliminationRound ||
+        second.wins - first.wins ||
+        second.scoreDiff - first.scoreDiff ||
+        second.scoreFor - first.scoreFor ||
+        first.sortName.localeCompare(second.sortName)
+      );
+    });
+
+    return sorted.map((item, index) => {
+      item.place = index + 1;
+
+      return plainToInstance(TournamentLeaderboardItemDto, item, {
+        excludeExtraneousValues: true,
+      });
+    });
+  }
+
+  private setMatchSlot(
+    match: TournamentMatchEntity,
+    slot: TournamentMatchSlot,
+    userId: UserId | null,
+  ): void {
+    if (slot === TournamentMatchSlot.A) {
+      match.participantAUserId = userId;
+      return;
+    }
+
+    match.participantBUserId = userId;
+  }
+
+  private getParticipantCount(match: TournamentMatchEntity): number {
+    return [match.participantAUserId, match.participantBUserId].filter(Boolean)
+      .length;
+  }
+
+  private nextPowerOfTwo(value: number): number {
+    let power = 1;
+
+    while (power < value) {
+      power *= 2;
+    }
+
+    return power;
+  }
+
+  private shuffle<T>(items: T[]): T[] {
+    const result = [...items];
+
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [result[index], result[randomIndex]] = [
+        result[randomIndex],
+        result[index],
+      ];
+    }
+
+    return result;
+  }
+
+  private sortMatches(
+    matches: TournamentMatchEntity[],
+  ): TournamentMatchEntity[] {
+    return [...matches].sort(
+      (first, second) =>
+        first.roundIndex - second.roundIndex ||
+        first.matchIndex - second.matchIndex,
+    );
+  }
+
+  private async getBracketEntityByTournamentId(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketEntity | null> {
+    return this.brackets.findOne({ where: { tournamentId } });
+  }
+
+  private async getRequiredBracketEntityByTournamentId(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketEntity> {
+    const bracket = await this.getBracketEntityByTournamentId(tournamentId);
+
+    if (!bracket) {
+      throw new NotFoundException('Сетка турнира не найдена.');
+    }
+
+    return bracket;
+  }
+
+  private async getMatchesByBracketId(
+    bracketId: string,
+  ): Promise<TournamentMatchEntity[]> {
+    return this.matches.find({
+      where: { bracketId },
+      order: { roundIndex: 'ASC', matchIndex: 'ASC' },
+    });
+  }
+
+  private async getFinalMatchEntity(
+    bracketId: string,
+  ): Promise<TournamentMatchEntity | null> {
+    const matches = await this.getMatchesByBracketId(bracketId);
+
+    return this.getFinalMatchFromMatches(matches);
+  }
+
+  private getFinalMatchFromMatches(
+    matches: TournamentMatchEntity[],
+  ): TournamentMatchEntity | null {
+    return (
+      matches
+        .filter(({ nextMatchId }) => !nextMatchId)
+        .sort((first, second) => second.roundIndex - first.roundIndex)[0] ??
+      null
+    );
+  }
+
+  private async mapBracketByTournamentId(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto | null> {
+    const bracket = await this.getBracketEntityByTournamentId(tournamentId);
+
+    if (!bracket) {
+      return null;
+    }
+
+    return this.mapBracketByEntity(bracket);
+  }
+
+  private async mapBracketByEntity(
+    bracket: TournamentBracketEntity,
+  ): Promise<TournamentBracketDto> {
+    const matches = await this.getMatchesByBracketId(bracket.id);
+    const rounds = [...new Set(matches.map(({ roundIndex }) => roundIndex))]
+      .sort((first, second) => first - second)
+      .map((roundIndex) => ({
+        roundIndex,
+        matches: this.sortMatches(
+          matches.filter((match) => match.roundIndex === roundIndex),
+        ).map((match) => this.mapMatchToDto(match)),
+      }));
+
+    return plainToInstance(
+      TournamentBracketDto,
+      {
+        ...bracket,
+        rounds,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
+  }
+
+  private mapMatchToDto(entity: TournamentMatchEntity): TournamentMatchDto {
+    return plainToInstance(TournamentMatchDto, entity, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  private mapParticipantToDto(
+    entity: TournamentRegistrationEntity,
+  ): TournamentParticipantDto {
+    return plainToInstance(
+      TournamentParticipantDto,
+      {
+        registrationId: entity.id,
+        tournamentId: entity.tournamentId,
+        userId: entity.userId,
+        status: entity.status,
+        createdAt: entity.createdAt,
+      },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
   private validateTournamentDates(
@@ -618,7 +1658,11 @@ export class TournamentsService {
     return this.registrations.count({
       where: {
         tournamentId,
-        status: TournamentRegistrationStatus.Approved,
+        status: In([
+          TournamentRegistrationStatus.Approved,
+          TournamentRegistrationStatus.Attended,
+          TournamentRegistrationStatus.NoShow,
+        ]),
       },
     });
   }
@@ -729,7 +1773,7 @@ export class TournamentsService {
 
     const queryBuilder = this.tournaments
       .createQueryBuilder('tournament')
-      .orderBy('tournament.startAt', 'ASC');
+      .orderBy('tournament.startAt', 'DESC');
 
     if (publicOnly) {
       queryBuilder.where('tournament.status IN (:...publicStatuses)', {

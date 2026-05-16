@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsDate, IsEnum, IsInt, IsUUID, ValidateNested } from 'class-validator';
 
-import type { TournamentId } from './tournament.dto';
+import { TournamentDto, type TournamentId } from './tournament.dto';
 import { UserDto, type UserId } from './user.dto';
 
 export type TournamentRegistrationId = string;
@@ -58,6 +58,12 @@ export class TournamentRegistrationFullDto extends TournamentRegistrationDto {
   @ValidateNested()
   @Type(() => UserDto)
   user: UserDto | null;
+
+  @ApiProperty({ type: () => TournamentDto, nullable: true })
+  @Expose()
+  @ValidateNested()
+  @Type(() => TournamentDto)
+  tournament: TournamentDto | null;
 }
 
 export class CreateTournamentRegistrationManualDto {

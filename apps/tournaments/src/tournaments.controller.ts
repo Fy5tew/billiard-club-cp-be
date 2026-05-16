@@ -2,6 +2,17 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
 import {
+  SetTournamentMatchResultDto,
+  TournamentBracketDto,
+  TournamentLeaderboardItemDto,
+  TournamentMatchId,
+  UpdateTournamentBracketSeedingDto,
+} from '@app/shared/dtos/tournament-bracket.dto';
+import {
+  TournamentParticipantDto,
+  UpdateTournamentParticipantAttendanceDto,
+} from '@app/shared/dtos/tournament-participant.dto';
+import {
   CreateTournamentRegistrationManualDto,
   TournamentRegistrationDto,
 } from '@app/shared/dtos/tournament-registration.dto';
@@ -154,5 +165,83 @@ export class TournamentsController {
     @Payload() userId: UserId,
   ): Promise<TournamentRegistrationDto[]> {
     return this.tournamentsService.getByUserId(userId);
+  }
+
+  @MessagePattern(TournamentsMessage.GET_PARTICIPANTS)
+  async getParticipants(
+    @Payload() tournamentId: TournamentId,
+  ): Promise<TournamentParticipantDto[]> {
+    return this.tournamentsService.getParticipants(tournamentId);
+  }
+
+  @MessagePattern(TournamentsMessage.UPDATE_PARTICIPANT_ATTENDANCE)
+  async updateParticipantAttendance(
+    @Payload()
+    [tournamentId, registrationId, data]: [
+      TournamentId,
+      TournamentRegistrationId,
+      UpdateTournamentParticipantAttendanceDto,
+    ],
+  ): Promise<TournamentParticipantDto> {
+    return this.tournamentsService.updateParticipantAttendance(
+      tournamentId,
+      registrationId,
+      data.status,
+    );
+  }
+
+  @MessagePattern(TournamentsMessage.GET_BRACKET)
+  async getBracket(
+    @Payload() tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto | null> {
+    return this.tournamentsService.getBracket(tournamentId);
+  }
+
+  @MessagePattern(TournamentsMessage.CREATE_BRACKET)
+  async createBracket(
+    @Payload() tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    return this.tournamentsService.createBracket(tournamentId);
+  }
+
+  @MessagePattern(TournamentsMessage.RANDOMIZE_BRACKET_SEEDING)
+  async randomizeBracketSeeding(
+    @Payload() tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    return this.tournamentsService.randomizeBracketSeeding(tournamentId);
+  }
+
+  @MessagePattern(TournamentsMessage.UPDATE_BRACKET_SEEDING)
+  async updateBracketSeeding(
+    @Payload()
+    [tournamentId, data]: [TournamentId, UpdateTournamentBracketSeedingDto],
+  ): Promise<TournamentBracketDto> {
+    return this.tournamentsService.updateBracketSeeding(tournamentId, data);
+  }
+
+  @MessagePattern(TournamentsMessage.CONFIRM_BRACKET_SEEDING)
+  async confirmBracketSeeding(
+    @Payload() tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    return this.tournamentsService.confirmBracketSeeding(tournamentId);
+  }
+
+  @MessagePattern(TournamentsMessage.SET_MATCH_RESULT)
+  async setMatchResult(
+    @Payload()
+    [tournamentId, matchId, data]: [
+      TournamentId,
+      TournamentMatchId,
+      SetTournamentMatchResultDto,
+    ],
+  ): Promise<TournamentBracketDto> {
+    return this.tournamentsService.setMatchResult(tournamentId, matchId, data);
+  }
+
+  @MessagePattern(TournamentsMessage.GET_LEADERBOARD)
+  async getLeaderboard(
+    @Payload() tournamentId: TournamentId,
+  ): Promise<TournamentLeaderboardItemDto[]> {
+    return this.tournamentsService.getLeaderboard(tournamentId);
   }
 }

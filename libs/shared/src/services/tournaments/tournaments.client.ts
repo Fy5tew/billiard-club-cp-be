@@ -3,6 +3,17 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 
 import { TournamentsMessage } from './tournaments.messages';
+import type {
+  SetTournamentMatchResultDto,
+  TournamentBracketDto,
+  TournamentLeaderboardItemDto,
+  TournamentMatchId,
+  UpdateTournamentBracketSeedingDto,
+} from '../../dtos/tournament-bracket.dto';
+import type {
+  TournamentParticipantDto,
+  UpdateTournamentParticipantAttendanceDto,
+} from '../../dtos/tournament-participant.dto';
 import {
   CreateTournamentRegistrationManualDto,
   TournamentRegistrationDto,
@@ -232,6 +243,118 @@ export class TournamentsClient {
       this.client.send<TournamentRegistrationDto[], UserId>(
         TournamentsMessage.GET_REGISTRATIONS_BY_USER_ID,
         userId,
+      ),
+    );
+  }
+
+  async getParticipants(
+    tournamentId: TournamentId,
+  ): Promise<TournamentParticipantDto[]> {
+    return firstValueFrom(
+      this.client.send<TournamentParticipantDto[], TournamentId>(
+        TournamentsMessage.GET_PARTICIPANTS,
+        tournamentId,
+      ),
+    );
+  }
+
+  async updateParticipantAttendance(
+    tournamentId: TournamentId,
+    registrationId: TournamentRegistrationId,
+    data: UpdateTournamentParticipantAttendanceDto,
+  ): Promise<TournamentParticipantDto> {
+    return firstValueFrom(
+      this.client.send<
+        TournamentParticipantDto,
+        [
+          TournamentId,
+          TournamentRegistrationId,
+          UpdateTournamentParticipantAttendanceDto,
+        ]
+      >(TournamentsMessage.UPDATE_PARTICIPANT_ATTENDANCE, [
+        tournamentId,
+        registrationId,
+        data,
+      ]),
+    );
+  }
+
+  async getBracket(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto | null> {
+    return firstValueFrom(
+      this.client.send<TournamentBracketDto | null, TournamentId>(
+        TournamentsMessage.GET_BRACKET,
+        tournamentId,
+      ),
+    );
+  }
+
+  async createBracket(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    return firstValueFrom(
+      this.client.send<TournamentBracketDto, TournamentId>(
+        TournamentsMessage.CREATE_BRACKET,
+        tournamentId,
+      ),
+    );
+  }
+
+  async randomizeBracketSeeding(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    return firstValueFrom(
+      this.client.send<TournamentBracketDto, TournamentId>(
+        TournamentsMessage.RANDOMIZE_BRACKET_SEEDING,
+        tournamentId,
+      ),
+    );
+  }
+
+  async updateBracketSeeding(
+    tournamentId: TournamentId,
+    data: UpdateTournamentBracketSeedingDto,
+  ): Promise<TournamentBracketDto> {
+    return firstValueFrom(
+      this.client.send<
+        TournamentBracketDto,
+        [TournamentId, UpdateTournamentBracketSeedingDto]
+      >(TournamentsMessage.UPDATE_BRACKET_SEEDING, [tournamentId, data]),
+    );
+  }
+
+  async confirmBracketSeeding(
+    tournamentId: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    return firstValueFrom(
+      this.client.send<TournamentBracketDto, TournamentId>(
+        TournamentsMessage.CONFIRM_BRACKET_SEEDING,
+        tournamentId,
+      ),
+    );
+  }
+
+  async setMatchResult(
+    tournamentId: TournamentId,
+    matchId: TournamentMatchId,
+    data: SetTournamentMatchResultDto,
+  ): Promise<TournamentBracketDto> {
+    return firstValueFrom(
+      this.client.send<
+        TournamentBracketDto,
+        [TournamentId, TournamentMatchId, SetTournamentMatchResultDto]
+      >(TournamentsMessage.SET_MATCH_RESULT, [tournamentId, matchId, data]),
+    );
+  }
+
+  async getLeaderboard(
+    tournamentId: TournamentId,
+  ): Promise<TournamentLeaderboardItemDto[]> {
+    return firstValueFrom(
+      this.client.send<TournamentLeaderboardItemDto[], TournamentId>(
+        TournamentsMessage.GET_LEADERBOARD,
+        tournamentId,
       ),
     );
   }

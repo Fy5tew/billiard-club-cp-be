@@ -5,6 +5,7 @@ import {
   Get,
   HttpStatus,
   Param,
+  Patch,
   ParseUUIDPipe,
   Post,
   Put,
@@ -21,6 +22,17 @@ import {
 } from '@nestjs/swagger';
 
 import {
+  SetTournamentMatchResultDto,
+  TournamentBracketDto,
+  TournamentLeaderboardItemDto,
+  UpdateTournamentBracketSeedingDto,
+} from '@app/shared/dtos/tournament-bracket.dto';
+import type { TournamentMatchId } from '@app/shared/dtos/tournament-bracket.dto';
+import {
+  TournamentParticipantDto,
+  UpdateTournamentParticipantAttendanceDto,
+} from '@app/shared/dtos/tournament-participant.dto';
+import {
   CreateTournamentRegistrationManualDto,
   TournamentRegistrationDto,
   TournamentRegistrationFullDto,
@@ -33,7 +45,11 @@ import {
   UpdateTournamentDto,
 } from '@app/shared/dtos/tournament.dto';
 import type { TournamentId } from '@app/shared/dtos/tournament.dto';
-import { UserRole } from '@app/shared/dtos/user.dto';
+import {
+  SimplifiedUserDto,
+  UserDto,
+  UserRole,
+} from '@app/shared/dtos/user.dto';
 import { IdentityClient } from '@app/shared/services/identity/identity.client';
 import { TournamentsClient } from '@app/shared/services/tournaments/tournaments.client';
 import type { RequestWithUser } from '@app/shared/types/auth.types';
@@ -250,6 +266,151 @@ export class TournamentsController {
     );
   }
 
+  @ApiOperation({ summary: 'Get tournament participants' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: [TournamentParticipantDto] })
+  @PublicRoute()
+  @Get(TournamentsRoute.TOURNAMENT_PARTICIPANTS)
+  async getParticipants(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+    @Req() request: RequestWithUser,
+  ): Promise<TournamentParticipantDto[]> {
+    return this.enrichParticipants(
+      await this.tournamentsClient.getParticipants(id),
+      request,
+    );
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update tournament participant attendance' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'registrationId', type: 'string', format: 'uuid' })
+  @ApiBody({ type: UpdateTournamentParticipantAttendanceDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentParticipantDto })
+  @RoleAccess(UserRole.Manager)
+  @Patch(TournamentsRoute.TOURNAMENT_PARTICIPANT_ATTENDANCE)
+  async updateParticipantAttendance(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+    @Param('registrationId', ParseUUIDPipe)
+    registrationId: TournamentRegistrationId,
+    @Body() data: UpdateTournamentParticipantAttendanceDto,
+  ): Promise<TournamentParticipantDto> {
+    const participant =
+      await this.tournamentsClient.updateParticipantAttendance(
+        id,
+        registrationId,
+        data,
+      );
+
+    return this.enrichParticipant(participant, true);
+  }
+
+  @ApiOperation({ summary: 'Get tournament bracket' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentBracketDto })
+  @PublicRoute()
+  @Get(TournamentsRoute.TOURNAMENT_BRACKET)
+  async getBracket(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+    @Req() request: RequestWithUser,
+  ): Promise<TournamentBracketDto | null> {
+    return this.enrichBracket(
+      await this.tournamentsClient.getBracket(id),
+      request,
+    );
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create tournament bracket' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.CREATED, type: TournamentBracketDto })
+  @RoleAccess(UserRole.Manager)
+  @Post(TournamentsRoute.TOURNAMENT_BRACKET)
+  async createBracket(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    return this.enrichBracketRequired(
+      await this.tournamentsClient.createBracket(id),
+    );
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Randomize tournament bracket seeding' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentBracketDto })
+  @RoleAccess(UserRole.Manager)
+  @Post(TournamentsRoute.TOURNAMENT_BRACKET_RANDOMIZE)
+  async randomizeBracketSeeding(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    return this.enrichBracketRequired(
+      await this.tournamentsClient.randomizeBracketSeeding(id),
+    );
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update tournament bracket seeding' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiBody({ type: UpdateTournamentBracketSeedingDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentBracketDto })
+  @RoleAccess(UserRole.Manager)
+  @Patch(TournamentsRoute.TOURNAMENT_BRACKET_SEEDING)
+  async updateBracketSeeding(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+    @Body() data: UpdateTournamentBracketSeedingDto,
+  ): Promise<TournamentBracketDto> {
+    return this.enrichBracketRequired(
+      await this.tournamentsClient.updateBracketSeeding(id, data),
+    );
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Confirm tournament bracket seeding' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentBracketDto })
+  @RoleAccess(UserRole.Manager)
+  @Post(TournamentsRoute.TOURNAMENT_BRACKET_CONFIRM)
+  async confirmBracketSeeding(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+  ): Promise<TournamentBracketDto> {
+    return this.enrichBracketRequired(
+      await this.tournamentsClient.confirmBracketSeeding(id),
+    );
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set tournament match result' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiParam({ name: 'matchId', type: 'string', format: 'uuid' })
+  @ApiBody({ type: SetTournamentMatchResultDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TournamentBracketDto })
+  @RoleAccess(UserRole.Manager)
+  @Patch(TournamentsRoute.TOURNAMENT_MATCH_RESULT)
+  async setMatchResult(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+    @Param('matchId', ParseUUIDPipe) matchId: TournamentMatchId,
+    @Body() data: SetTournamentMatchResultDto,
+  ): Promise<TournamentBracketDto> {
+    return this.enrichBracketRequired(
+      await this.tournamentsClient.setMatchResult(id, matchId, data),
+    );
+  }
+
+  @ApiOperation({ summary: 'Get tournament leaderboard' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: [TournamentLeaderboardItemDto] })
+  @PublicRoute()
+  @Get(TournamentsRoute.TOURNAMENT_LEADERBOARD)
+  async getLeaderboard(
+    @Param('id', ParseUUIDPipe) id: TournamentId,
+    @Req() request: RequestWithUser,
+  ): Promise<TournamentLeaderboardItemDto[]> {
+    return this.enrichLeaderboard(
+      await this.tournamentsClient.getLeaderboard(id),
+      request,
+    );
+  }
+
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Approve tournament registration' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
@@ -326,6 +487,200 @@ export class TournamentsController {
     return this.tournamentsClient.completeById(id);
   }
 
+  private async enrichParticipants(
+    participants: TournamentParticipantDto[],
+    request?: RequestWithUser,
+  ): Promise<TournamentParticipantDto[]> {
+    const includePrivateUserData = this.canViewPrivateTournamentUsers(request);
+    const currentUserId = request?.user?.id;
+
+    return Promise.all(
+      participants.map((participant) =>
+        this.enrichParticipant(
+          participant,
+          includePrivateUserData,
+          currentUserId,
+        ),
+      ),
+    );
+  }
+
+  private async enrichParticipant(
+    participant: TournamentParticipantDto,
+    includePrivateUserData = false,
+    currentUserId?: string,
+  ): Promise<TournamentParticipantDto> {
+    const user = await this.fetchSafe(() =>
+      this.identityClient.getById(participant.userId),
+    );
+
+    return {
+      ...participant,
+      userId:
+        includePrivateUserData || currentUserId === participant.userId
+          ? participant.userId
+          : (null as never),
+      user: this.toTournamentUser(user, includePrivateUserData),
+    };
+  }
+
+  private async enrichBracket(
+    bracket: TournamentBracketDto | null,
+    request?: RequestWithUser,
+  ): Promise<TournamentBracketDto | null> {
+    if (!bracket) {
+      return null;
+    }
+
+    return this.enrichBracketRequired(
+      bracket,
+      this.canViewPrivateTournamentUsers(request),
+      request?.user?.id,
+    );
+  }
+
+  private async enrichBracketRequired(
+    bracket: TournamentBracketDto,
+    includePrivateUserData = true,
+    currentUserId?: string,
+  ): Promise<TournamentBracketDto> {
+    const userIds = new Set<string>();
+
+    bracket.rounds.forEach((round) => {
+      round.matches.forEach((match) => {
+        if (match.participantAUserId) {
+          userIds.add(match.participantAUserId);
+        }
+
+        if (match.participantBUserId) {
+          userIds.add(match.participantBUserId);
+        }
+      });
+    });
+
+    const users = await this.getSimplifiedUsersByIds([...userIds]);
+
+    return {
+      ...bracket,
+      rounds: bracket.rounds.map((round) => ({
+        ...round,
+        matches: round.matches.map((match) => ({
+          ...match,
+          participantAUserId:
+            includePrivateUserData || currentUserId === match.participantAUserId
+              ? match.participantAUserId
+              : null,
+          participantBUserId:
+            includePrivateUserData || currentUserId === match.participantBUserId
+              ? match.participantBUserId
+              : null,
+          winnerUserId:
+            includePrivateUserData || currentUserId === match.winnerUserId
+              ? match.winnerUserId
+              : null,
+          loserUserId:
+            includePrivateUserData || currentUserId === match.loserUserId
+              ? match.loserUserId
+              : null,
+          winnerSlot: !match.winnerUserId
+            ? null
+            : match.winnerUserId === match.participantAUserId
+              ? 'A'
+              : match.winnerUserId === match.participantBUserId
+                ? 'B'
+                : null,
+          participantA: match.participantAUserId
+            ? this.toTournamentUser(
+                users.get(match.participantAUserId) ?? null,
+                includePrivateUserData,
+              )
+            : null,
+          participantB: match.participantBUserId
+            ? this.toTournamentUser(
+                users.get(match.participantBUserId) ?? null,
+                includePrivateUserData,
+              )
+            : null,
+        })),
+      })),
+    };
+  }
+
+  private async enrichLeaderboard(
+    leaderboard: TournamentLeaderboardItemDto[],
+    request?: RequestWithUser,
+  ): Promise<TournamentLeaderboardItemDto[]> {
+    const includePrivateUserData = this.canViewPrivateTournamentUsers(request);
+    const currentUserId = request?.user?.id;
+    const users = await this.getSimplifiedUsersByIds(
+      leaderboard.map(({ userId }) => userId),
+    );
+
+    return leaderboard.map((item) => ({
+      ...item,
+      userId:
+        includePrivateUserData || currentUserId === item.userId
+          ? item.userId
+          : (null as never),
+      user: this.toTournamentUser(
+        users.get(item.userId) ?? null,
+        includePrivateUserData,
+      ),
+    }));
+  }
+
+  private async getSimplifiedUsersByIds(
+    userIds: string[],
+  ): Promise<Map<string, SimplifiedUserDto | null>> {
+    const uniqueUserIds = [...new Set(userIds)];
+    const users = await Promise.all(
+      uniqueUserIds.map(async (userId) => {
+        const user = await this.fetchSafe(() =>
+          this.identityClient.getById(userId),
+        );
+
+        return [userId, this.toSimplifiedUser(user)] as const;
+      }),
+    );
+
+    return new Map(users);
+  }
+
+  private toSimplifiedUser(user: UserDto | null): SimplifiedUserDto | null {
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      surname: user.surname,
+      email: user.email,
+    };
+  }
+
+  private toTournamentUser(
+    user: UserDto | SimplifiedUserDto | null,
+    includePrivateUserData: boolean,
+  ): SimplifiedUserDto | null {
+    if (!user) {
+      return null;
+    }
+
+    if (includePrivateUserData) {
+      return this.toSimplifiedUser(user as UserDto);
+    }
+
+    return {
+      name: user.name,
+      surname: user.surname,
+    } as SimplifiedUserDto;
+  }
+
+  private canViewPrivateTournamentUsers(request?: RequestWithUser): boolean {
+    return (request?.user?.role ?? -1) >= UserRole.Manager;
+  }
+
   private async mapRegistrationsToFull(
     registrations: TournamentRegistrationDto[],
   ): Promise<TournamentRegistrationFullDto[]> {
@@ -339,11 +694,17 @@ export class TournamentsController {
   private async mapRegistrationToFull(
     registration: TournamentRegistrationDto,
   ): Promise<TournamentRegistrationFullDto> {
+    const [user, tournament] = await Promise.all([
+      this.fetchSafe(() => this.identityClient.getById(registration.userId)),
+      this.fetchSafe(() =>
+        this.tournamentsClient.getById(registration.tournamentId),
+      ),
+    ]);
+
     return {
       ...registration,
-      user: await this.fetchSafe(() =>
-        this.identityClient.getById(registration.userId),
-      ),
+      user,
+      tournament,
     };
   }
 
