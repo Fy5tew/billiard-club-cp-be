@@ -79,36 +79,9 @@ export class BookingClient {
     );
   }
 
-  async getUpcomingBookings(): Promise<BookingDto[]> {
-    return firstValueFrom(
-      this.client.send<BookingDto[], object>(
-        BookingMessage.GET_UPCOMING_BOOKINGS,
-        {},
-      ),
-    );
-  }
-
   async getById(id: BookingId): Promise<BookingDto> {
     return firstValueFrom(
       this.client.send<BookingDto, BookingId>(BookingMessage.GET_BY_ID, id),
-    );
-  }
-
-  async getByUserId(userId: UserId): Promise<BookingDto[]> {
-    return firstValueFrom(
-      this.client.send<BookingDto[], UserId>(
-        BookingMessage.GET_BY_USER_ID,
-        userId,
-      ),
-    );
-  }
-
-  async getByBilliardTableId(tableId: BilliardTableId): Promise<BookingDto[]> {
-    return firstValueFrom(
-      this.client.send<BookingDto[], BilliardTableId>(
-        BookingMessage.GET_BY_BILLIARD_TABLE_ID,
-        tableId,
-      ),
     );
   }
 }

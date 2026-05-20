@@ -8,6 +8,7 @@ import {
 
 import { TournamentRegistrationEntity } from './tournament-registration.entity';
 import { TournamentStatus } from '../dtos/tournament.dto';
+import { decimalColumnTransformer } from '../helpers/decimal-column.transformer';
 
 @Entity('tournaments')
 export class TournamentEntity {
@@ -33,7 +34,12 @@ export class TournamentEntity {
   @Column({ type: 'int' })
   maxParticipants: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    transformer: decimalColumnTransformer,
+  })
   entryFee: number;
 
   @Index()

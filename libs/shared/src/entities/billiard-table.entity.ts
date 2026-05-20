@@ -6,6 +6,7 @@ import {
   BilliardTableType,
 } from '../dtos/billiard-table.dto';
 import type { BilliardTableId } from '../dtos/billiard-table.dto';
+import { decimalColumnTransformer } from '../helpers/decimal-column.transformer';
 
 @Entity({ name: 'billiard_tables' })
 export class BilliardTableEntity {
@@ -18,7 +19,11 @@ export class BilliardTableEntity {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'decimal', nullable: false })
+  @Column({
+    type: 'decimal',
+    nullable: false,
+    transformer: decimalColumnTransformer,
+  })
   hourlyPrice: number;
 
   @Column({

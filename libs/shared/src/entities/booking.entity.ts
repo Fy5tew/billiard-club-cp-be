@@ -13,6 +13,7 @@ import { UserEntity } from './user.entity';
 import type { BilliardTableId } from '../dtos/billiard-table.dto';
 import { BookingStatus } from '../dtos/booking.dto';
 import type { UserId } from '../dtos/user.dto';
+import { decimalColumnTransformer } from '../helpers/decimal-column.transformer';
 
 @Entity('bookings')
 export class BookingEntity {
@@ -49,7 +50,12 @@ export class BookingEntity {
   @Column({ type: 'timestamp' })
   endTime: Date;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    transformer: decimalColumnTransformer,
+  })
   totalCost: number;
 
   @CreateDateColumn()

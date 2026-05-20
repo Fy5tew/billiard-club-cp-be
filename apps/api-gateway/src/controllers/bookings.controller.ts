@@ -67,16 +67,6 @@ export class BookingsController {
   }
 
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get upcoming bookings for current day' })
-  @ApiResponse({ status: HttpStatus.OK, type: [BookingDto] })
-  @RoleAccess(UserRole.Manager)
-  @Get(BookingsRoute.UPCOMING)
-  async getUpcoming(): Promise<BookingFullDto[]> {
-    const bookings = await this.bookingClient.getUpcomingBookings();
-    return this.mapToFullMany(bookings);
-  }
-
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create new booking' })
   @ApiBody({ type: CreateBookingDto })
   @ApiResponse({
@@ -192,7 +182,7 @@ export class BookingsController {
   async getMyBookings(
     @Req() { user }: RequestWithUser,
   ): Promise<BookingFullDto[]> {
-    const bookings = await this.bookingClient.getByUserId(user.id);
+    const bookings = await this.bookingClient.getBookings({ userId: user.id });
     return this.mapToFullMany(bookings);
   }
 
@@ -208,32 +198,6 @@ export class BookingsController {
     const booking = await this.bookingClient.getById(id);
     this.checkReadAccess(booking, user.id, user.role);
     return this.mapToFull(booking);
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get bookings by user ID' })
-  @ApiParam({ name: 'userId', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: [BookingFullDto] })
-  @RoleAccess(UserRole.Manager)
-  @Get(BookingsRoute.BOOKINGS_BY_USER)
-  async getByUserId(
-    @Param('userId') userId: UserId,
-  ): Promise<BookingFullDto[]> {
-    const bookings = await this.bookingClient.getByUserId(userId);
-    return this.mapToFullMany(bookings);
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get bookings by billiard table ID' })
-  @ApiParam({ name: 'billiardTableId', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: HttpStatus.OK, type: [BookingFullDto] })
-  @RoleAccess(UserRole.Manager)
-  @Get(BookingsRoute.BOOKINGS_BY_BILLIARD_TABLE)
-  async getByTableId(
-    @Param('billiardTableId') tableId: BilliardTableId,
-  ): Promise<BookingFullDto[]> {
-    const bookings = await this.bookingClient.getByBilliardTableId(tableId);
-    return this.mapToFullMany(bookings);
   }
 
   @ApiBearerAuth()

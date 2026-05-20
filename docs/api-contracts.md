@@ -85,7 +85,6 @@ Example body:
 Controller: `apps/api-gateway/src/controllers/bookings.controller.ts`
 
 - `GET /bookings` -> `BookingFullDto[]`
-- `GET /bookings/upcoming` -> `BookingFullDto[]`
 - `POST /bookings` -> `CreateBookingDto` -> `BookingDto`
 - `POST /bookings/manual` -> `CreateBookingManualDto` -> `BookingDto`
 - `GET /bookings/slots/:billiardTableId` + `GetBookedSlotsDto` query -> `BookedSlotDto[]`

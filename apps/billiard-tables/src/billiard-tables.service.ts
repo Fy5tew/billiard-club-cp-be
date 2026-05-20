@@ -397,11 +397,10 @@ export class BilliardTablesService {
   private async persistPhotoOrder(
     photos: BilliardTablePhotoEntity[],
   ): Promise<void> {
-    await this.photos.save(
-      photos.map((photo, index) => {
-        photo.sortOrder = index;
-        return photo;
-      }),
+    await Promise.all(
+      photos.map((photo, index) =>
+        this.photos.update({ id: photo.id }, { sortOrder: index }),
+      ),
     );
   }
 

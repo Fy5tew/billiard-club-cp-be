@@ -93,7 +93,7 @@ export class IdentityClient {
 
   async getUsersSimplified(): Promise<SimplifiedUserDto[]> {
     return firstValueFrom(
-      this.client.send<UserDto[], object>(
+      this.client.send<SimplifiedUserDto[], object>(
         IdentityMessage.GET_USERS_SIMPLIFIED,
         {},
       ),

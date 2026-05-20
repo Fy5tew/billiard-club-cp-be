@@ -22,14 +22,15 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 
-import type { SimplifiedUserDto, UserId } from '@app/shared/dtos/user.dto';
 import {
   GetUsersQueryDto,
+  SimplifiedUserDto,
   UserDto,
   UpdateUserDto,
   UpdateUserProfileDto,
   UserRole,
 } from '@app/shared/dtos/user.dto';
+import type { UserId } from '@app/shared/dtos/user.dto';
 import { IdentityClient } from '@app/shared/services/identity/identity.client';
 import type { RequestWithUser } from '@app/shared/types/auth.types';
 import type { UploadedFilePayload } from '@app/shared/types/request.types';
@@ -67,7 +68,7 @@ export class UsersController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Get all users successfully',
-    type: [UserDto],
+    type: [SimplifiedUserDto],
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -276,9 +277,16 @@ export class UsersController {
   @RoleAccess(UserRole.Admin)
   @Put(UsersRoute.USER)
   async updateById(
+    @Req() { user }: RequestWithUser,
     @Param('id') id: UserId,
     @Body() data: UpdateUserDto,
   ): Promise<UserDto> {
+    if (user.id === id) {
+      throw new BadRequestException(
+        'Current user cannot be updated via admin user endpoint',
+      );
+    }
+
     return this.identityClient.updateById(id, data);
   }
 

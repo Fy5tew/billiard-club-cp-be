@@ -1,12 +1,9 @@
 export enum BookingsRoute {
   BASE = 'bookings',
   MANUAL = 'manual',
-  UPCOMING = 'upcoming',
   MY = 'my',
   AVAILABLE_TABLES = 'available-tables',
   BOOKED_SLOTS_FOR_BILLIARD_TABLE = 'slots/:billiardTableId',
-  BOOKINGS_BY_USER = 'users/:userId',
-  BOOKINGS_BY_BILLIARD_TABLE = 'tables/:billiardTableId',
   BOOKING = ':id',
   BOOKING_STATUS = ':id/status',
   CANCEL_BOOKING = ':id/cancel',

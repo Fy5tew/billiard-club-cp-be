@@ -72,7 +72,6 @@
   - `update_status_by_id`
   - `get_booked_slots_by_billiard_table_id`
   - `get_bookings`
-  - `get_upcoming_bookings`
   - `get_by_id`
   - `get_by_user_id`
   - `get_by_billiard_table_id`

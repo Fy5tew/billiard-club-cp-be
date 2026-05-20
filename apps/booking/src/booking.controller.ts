@@ -67,25 +67,8 @@ export class BookingController {
     return await this.bookingService.getBookings(query);
   }
 
-  @MessagePattern(BookingMessage.GET_UPCOMING_BOOKINGS)
-  async getUpcomingBookings(): Promise<BookingDto[]> {
-    return await this.bookingService.getUpcomingBookings();
-  }
-
   @MessagePattern(BookingMessage.GET_BY_ID)
   async getById(@Payload() id: BookingId): Promise<BookingDto> {
     return await this.bookingService.getById(id);
-  }
-
-  @MessagePattern(BookingMessage.GET_BY_USER_ID)
-  async getByUserId(@Payload() userId: UserId): Promise<BookingDto[]> {
-    return await this.bookingService.getByUserId(userId);
-  }
-
-  @MessagePattern(BookingMessage.GET_BY_BILLIARD_TABLE_ID)
-  async getByBilliardTableId(
-    @Payload() tableId: BilliardTableId,
-  ): Promise<BookingDto[]> {
-    return await this.bookingService.getByBilliardTableId(tableId);
   }
 }

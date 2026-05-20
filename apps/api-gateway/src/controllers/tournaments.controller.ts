@@ -656,6 +656,7 @@ export class TournamentsController {
       name: user.name,
       surname: user.surname,
       email: user.email,
+      photoUrl: user.photoUrl,
     };
   }
 
@@ -674,6 +675,7 @@ export class TournamentsController {
     return {
       name: user.name,
       surname: user.surname,
+      photoUrl: user.photoUrl ?? null,
     } as SimplifiedUserDto;
   }
 

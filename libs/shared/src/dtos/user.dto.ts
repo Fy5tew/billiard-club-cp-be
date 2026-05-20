@@ -70,6 +70,7 @@ export class SimplifiedUserDto extends PickType(UserDto, [
   'name',
   'surname',
   'email',
+  'photoUrl',
 ]) {}
 
 export class GetUsersQueryDto {
